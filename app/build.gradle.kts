@@ -56,4 +56,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    
+    // Google Mobile Ads (AdMob)
+    implementation("com.google.android.gms:play-services-ads:23.1.0")
+
+    // Google Play Billing Library
+    implementation("com.android.billingclient:billing-ktx:6.2.1")
 }
