@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mylamp"
+    namespace = "dev.flondy.mylamp"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.mylamp"
+        applicationId = "dev.flondy.mylamp"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -35,6 +35,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
