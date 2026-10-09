@@ -2,7 +2,7 @@
 
 ## Checkliste vor dem Upload
 
-- [ ] `mylamp.admobBannerId` in `local.properties` eintragen (AdMob → Apps → My Lamp → Anzeigenblöcke → Banner)
+- [x] AdMob-App-ID `ca-app-pub-6130152704553606~5683863711` (app/build.gradle.kts) und Banner-ID `ca-app-pub-6130152704553606/1689806050` (gradle.properties) eingetragen
 - [ ] optional `mylamp.playLicenseKey` und `mylamp.privacyPolicyUrl` eintragen
 - [ ] versionCode prüfen: 4 muss **höher** sein als die höchste bereits hochgeladene Version, sonst erhöhen
 - [ ] Signiertes App Bundle wie gewohnt über Android Studio erstellen (Keystore unverändert)

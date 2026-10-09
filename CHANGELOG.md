@@ -23,7 +23,7 @@
 - Beim Start gefundene, nicht bestätigte Käufe wurden nie acknowledged (automatische Erstattung nach 3 Tagen)
 - Rückerstattungen und ausstehende Käufe wurden nicht behandelt
 - Premium-Status ging bei Offline-Start verloren (Käufer sahen Werbung)
-- Release-Build nutzte eine Platzhalter-Banner-ID → jetzt zentral konfigurierbar, ohne ID keine Requests
+- Release-Build nutzte eine Platzhalter-Banner-ID → produktive ID `ca-app-pub-6130152704553606/1689806050` zentral in gradle.properties
 - Absturzrisiko durch `cameraIdList[0]` auf Geräten ohne (Rück-)Kamera
 - SOS-Morsezeiten korrigiert (Strich = 3 Einheiten, Pausen 1/3/7)
 - Strobe bis 10 ms war zu schnell für die Hardware → 1–12 Hz

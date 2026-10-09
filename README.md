@@ -45,11 +45,11 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/BILLING.md](docs/
 
 ## Konfiguration (vor dem Release)
 
-In `local.properties` (wird nicht committet) oder `gradle.properties` eintragen:
+In `gradle.properties` bzw. `local.properties` (wird nicht committet):
 
 ```properties
-# PFLICHT für Werbung im Release – sonst fordert der Release-Build keine Anzeigen an
-mylamp.admobBannerId=ca-app-pub-6130152704553606/XXXXXXXXXX
+# Produktive Banner-ID – bereits in gradle.properties eingetragen (local.properties überschreibt sie)
+mylamp.admobBannerId=ca-app-pub-6130152704553606/1689806050
 
 # Empfohlen: öffentlicher Lizenzschlüssel (Play Console → Monetarisierung einrichten → Lizenzierung)
 mylamp.playLicenseKey=MIIBIjANBgkq...
@@ -71,7 +71,6 @@ Debug-Builds verwenden automatisch die offizielle Google-Test-Banner-ID. Die AdM
 
 ## Bekannte Einschränkungen
 
-- **Release-Banner-ID fehlt** im Repository (siehe Konfiguration). Ohne sie bleibt Werbung im Release aus.
 - **Keine serverseitige Kaufprüfung:** Die App prüft Käufe über Google Play und optional per RSA-Signatur. Eine Prüfung über die Play Developer API erfordert ein eigenes Backend (siehe docs/BILLING.md).
 - **SOS/Taschenlampe im Hintergrund:** Das Licht läuft weiter, solange Android den Prozess nicht beendet. Ein Foreground-Service für garantierten Dauerbetrieb ist nicht eingebaut. Das Stroboskop stoppt bewusst beim Verlassen der App.
 - **Schütteln** funktioniert nur bei geöffneter App, um den Akku zu schonen.
