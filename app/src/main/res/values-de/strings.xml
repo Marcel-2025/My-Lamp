@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">Licht, veredelt.</string>
+    <string name="badge_premium">Premium</string>
+    <string name="tile_label">My Lamp</string>
+
+    <!-- Aktionen -->
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_go_premium">Premium</string>
+    <string name="action_restore_purchases">Käufe wiederherstellen</string>
+    <string name="action_retry">Erneut versuchen</string>
+
+    <!-- Bedienungshilfen -->
+    <string name="cd_power">Licht ein- oder ausschalten</string>
+    <string name="cd_settings">Einstellungen</string>
+    <string name="cd_locked_premium">Premium-Design, gesperrt</string>
+
+    <!-- Status &amp; Modi -->
+    <string name="status_off">Aus</string>
+    <string name="status_on">Licht an</string>
+    <string name="status_sos">SOS aktiv</string>
+    <string name="status_strobe">Stroboskop · %1$d Hz</string>
+    <string name="mode_sos">SOS</string>
+    <string name="mode_strobe">Stroboskop</string>
+    <string name="mode_screen">Bildschirm</string>
+    <string name="no_flash_hint">Kein LED-Blitz gefunden – es wird das Bildschirmlicht verwendet.</string>
+    <string name="torch_brightness">Helligkeit</string>
+
+    <!-- Stroboskop -->
+    <string name="strobe_frequency">Frequenz</string>
+    <string name="strobe_hz_value">%1$d Hz</string>
+    <string name="strobe_slow">langsam</string>
+    <string name="strobe_medium">mittel</string>
+    <string name="strobe_fast">schnell</string>
+    <string name="strobe_epilepsy_caption">⚠ Schnelles Blinken kann bei fotosensitiver Epilepsie Anfälle auslösen.</string>
+    <string name="strobe_warning_title">Hinweis zur Lichtempfindlichkeit</string>
+    <string name="strobe_warning_text">Das Stroboskop erzeugt schnell blinkendes Licht. Dies kann bei Menschen mit fotosensitiver Epilepsie Anfälle auslösen. Nicht direkt in das Licht schauen und nicht auf die Augen anderer richten.</string>
+    <string name="strobe_warning_confirm">Verstanden, starten</string>
+
+    <!-- Bildschirmlicht -->
+    <string name="screen_light_title">Bildschirmlicht</string>
+    <string name="screen_light_brightness">Helligkeit</string>
+    <string name="screen_light_tap_hint">Tippe irgendwo, um die Steuerung ein- oder auszublenden.</string>
+    <string name="screen_light_toggle_controls">Steuerung ein- oder ausblenden</string>
+    <string name="color_neutral">Neutralweiß</string>
+    <string name="color_warm">Warmweiß</string>
+    <string name="color_cool">Kaltweiß</string>
+    <string name="color_amber">Bernstein</string>
+    <string name="color_red">Rot (Nachtsicht)</string>
+
+    <!-- Designs -->
+    <string name="theme_classic">Klassisch</string>
+    <string name="theme_midnight">Mitternacht</string>
+    <string name="theme_misty_forest">Nebelwald</string>
+    <string name="theme_forest_road">Waldstraße</string>
+    <string name="theme_glade">Lichtung</string>
+    <string name="theme_golden_hour">Goldene Stunde</string>
+
+    <!-- Premium-Hinweise -->
+    <string name="premium_hint_top_title">Premium aktiviert</string>
+    <string name="premium_hint_top_subtitle">Werbefrei · voller Fokus auf Licht</string>
+    <string name="premium_hint_bottom">Werbefrei dank Premium – danke für deinen Support!</string>
+
+    <!-- Premium-Seite -->
+    <string name="paywall_title">My Lamp Premium</string>
+    <string name="paywall_subtitle">Einmal kaufen. Für immer werbefrei.</string>
+    <string name="paywall_benefit_ads_title">Dauerhaft werbefrei</string>
+    <string name="paywall_benefit_ads_text">Keine Banner mehr – auf allen Geräten mit demselben Google-Konto.</string>
+    <string name="paywall_benefit_themes_title">4 exklusive Designs</string>
+    <string name="paywall_benefit_themes_text">Nebelwald, Waldstraße, Lichtung und Goldene Stunde.</string>
+    <string name="paywall_benefit_look_title">Goldene Premium-Optik</string>
+    <string name="paywall_benefit_look_text">Dezente goldene Akzente in der gesamten App.</string>
+    <string name="paywall_benefit_support_title">Weiterentwicklung unterstützen</string>
+    <string name="paywall_benefit_support_text">Du hilfst, My Lamp unabhängig und gepflegt zu halten.</string>
+    <string name="paywall_price_once">Einmalkauf · %1$s</string>
+    <string name="paywall_price_loading">Preis wird von Google Play geladen …</string>
+    <string name="paywall_play_unavailable">Google Play ist auf diesem Gerät nicht verfügbar.</string>
+    <string name="paywall_no_subscription">Kein Abo · keine regelmäßigen Kosten</string>
+    <string name="paywall_buy">Premium kaufen</string>
+    <string name="paywall_buy_with_price">Für %1$s kaufen</string>
+    <string name="paywall_already_premium">Du bist Premium – danke!</string>
+    <string name="paywall_pending">Dein Kauf ist ausstehend. Premium wird automatisch freigeschaltet, sobald Google Play die Zahlung bestätigt.</string>
+    <string name="paywall_legal">Die Zahlung wird sicher über Google Play abgewickelt. Bestehende Käufe von „Werbung entfernen“ werden automatisch erkannt.</string>
+
+    <!-- Freischaltung -->
+    <string name="celebration_title">Premium freigeschaltet</string>
+    <string name="celebration_text">Danke für deine Unterstützung! My Lamp ist jetzt werbefrei und alle Designs sind freigeschaltet.</string>
+    <string name="celebration_continue">Weiter</string>
+
+    <!-- Kauf-Meldungen -->
+    <string name="billing_purchase_success">Premium freigeschaltet – danke!</string>
+    <string name="billing_pending">Kauf ausstehend – Premium wird nach der Bestätigung freigeschaltet.</string>
+    <string name="billing_restored">Kauf wiederhergestellt. Premium ist aktiv.</string>
+    <string name="billing_nothing_to_restore">Für dieses Google-Konto wurde kein Kauf gefunden.</string>
+    <string name="billing_unavailable">Google Play ist gerade nicht erreichbar. Bitte später erneut versuchen.</string>
+    <string name="billing_error">Der Kauf konnte nicht abgeschlossen werden. Bitte erneut versuchen.</string>
+
+    <!-- Fehler -->
+    <string name="error_no_flash">Dieses Gerät hat keinen LED-Blitz. Nutze stattdessen das Bildschirmlicht.</string>
+    <string name="error_camera_in_use">Der Blitz wird gerade von einer anderen App verwendet.</string>
+    <string name="error_torch_unknown">Der Blitz konnte nicht geschaltet werden.</string>
+    <string name="error_no_mail_app">Keine E-Mail-App gefunden.</string>
+    <string name="error_no_app">Keine App zum Öffnen dieses Links gefunden.</string>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_section_general">Allgemein</string>
+    <string name="settings_section_flashlight">Taschenlampe</string>
+    <string name="settings_section_info">Datenschutz &amp; Informationen</string>
+    <string name="settings_fullscreen">Vollbildmodus</string>
+    <string name="settings_fullscreen_desc">Blendet Status- und Navigationsleiste aus. Vom Rand wischen, um sie kurz einzublenden.</string>
+    <string name="settings_nav_bar">Navigationsleiste anzeigen</string>
+    <string name="settings_nav_bar_desc">Aus: Nur die Navigationsleiste wird ausgeblendet.</string>
+    <string name="settings_animations">Animationen</string>
+    <string name="settings_animations_desc">Berücksichtigt auch die Systemeinstellung „Animationen entfernen“.</string>
+    <string name="settings_haptics">Haptisches Feedback</string>
+    <string name="settings_haptics_desc">Sanfte Vibration beim Tippen und Umschalten.</string>
+    <string name="settings_theme">Design</string>
+    <string name="settings_theme_desc">Hintergrund und Stimmung des Hauptbildschirms.</string>
+    <string name="settings_default_source">Power-Button steuert</string>
+    <string name="source_led">LED-Blitz</string>
+    <string name="source_screen">Bildschirmlicht</string>
+    <string name="settings_start_behavior">Beim App-Start</string>
+    <string name="start_off">Aus lassen</string>
+    <string name="start_torch">Licht an</string>
+    <string name="start_screen">Bildschirmlicht</string>
+    <string name="settings_strobe_speed">Stroboskop-Geschwindigkeit</string>
+    <string name="settings_shake">Schütteln zum Schalten</string>
+    <string name="settings_shake_desc">Kräftig schütteln schaltet das Licht, solange die App geöffnet ist.</string>
+    <string name="settings_shake_unavailable">Auf diesem Gerät ist kein Bewegungssensor verfügbar.</string>
+    <string name="settings_shake_sensitivity">Empfindlichkeit</string>
+    <string name="sensitivity_low">Niedrig</string>
+    <string name="sensitivity_medium">Mittel</string>
+    <string name="sensitivity_high">Hoch</string>
+    <string name="premium_status_active">Premium aktiv</string>
+    <string name="premium_status_active_desc">Werbefrei · alle Designs freigeschaltet</string>
+    <string name="premium_status_free">Kostenlose Version</string>
+    <string name="premium_status_free_desc">Alle Taschenlampen-Funktionen sind kostenlos. Premium entfernt die Werbung.</string>
+    <string name="premium_status_pending">Kauf ausstehend</string>
+    <string name="settings_premium_top_hint">Hinweis „Premium aktiviert“</string>
+    <string name="settings_premium_top_hint_desc">Kleiner Hinweis oben auf dem Hauptbildschirm.</string>
+    <string name="settings_premium_bottom_hint">Hinweis „Werbefrei“</string>
+    <string name="settings_premium_bottom_hint_desc">Dankeschön an der Stelle der früheren Werbung.</string>
+    <string name="settings_restore_desc">Käufe erneut mit Google Play abgleichen.</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_developer">Entwickler</string>
+    <string name="settings_privacy_options">Datenschutzoptionen</string>
+    <string name="settings_privacy_options_desc">Einwilligung für personalisierte Werbung ändern.</string>
+    <string name="settings_privacy_policy">Datenschutzerklärung</string>
+    <string name="settings_support">Support kontaktieren</string>
+    <string name="settings_play_store">My Lamp bei Google Play</string>
+    <string name="settings_play_store_desc">App bewerten oder nach Updates suchen.</string>
+    <string name="settings_safety_notice">Sicherheit: Die LED nicht direkt in Augen richten. Das Stroboskop kann bei fotosensitiver Epilepsie Anfälle auslösen. My Lamp ersetzt keine professionelle Notfallausrüstung.</string>
+</resources>

@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# --- My Lamp ---
+# Lesbare Stacktraces in Play Console (Mapping-Datei wird mit dem Bundle hochgeladen)
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

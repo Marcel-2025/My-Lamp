@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.MyLamp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dunkler Fensterhintergrund verhindert ein weißes Aufblitzen beim Start. -->
+    <style name="Theme.MyLamp" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/lamp_night</item>
+        <item name="android:colorAccent">@color/lamp_gold</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

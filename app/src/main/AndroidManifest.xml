@@ -2,8 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Werbung (AdMob) und Google Play Billing -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!--
+        Hinweis: Für CameraManager.setTorchMode() ist KEINE Kamera-Berechtigung nötig.
+        Die frühere CAMERA-Berechtigung wurde daher entfernt (weniger Rechte = besser für Nutzer und Data Safety).
+    -->
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
 
     <application
+        android:name=".MyLampApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,28 +23,37 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyLamp"
-        tools:targetApi="31">
+        tools:targetApi="36">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.MyLamp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
+        <!-- Schnelleinstellungs-Kachel „My Lamp“ -->
+        <service
+            android:name=".tile.TorchTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_flashlight"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <!-- AdMob App-ID (wird in app/build.gradle.kts zentral gepflegt) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-6130152704553606~5683863711"/>
+            android:value="${admobAppId}" />
     </application>
-
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
-
-    <uses-permission android:name="com.android.vending.BILLING" />
-    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 </manifest>

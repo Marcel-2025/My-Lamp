@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# My Lamp
+_backups/
+.kotlin/
+/app/build

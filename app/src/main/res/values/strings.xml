@@ -1,3 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">My Lamp</string>
+    <string name="app_name" translatable="false">My Lamp</string>
+    <string name="tagline">Light, refined.</string>
+    <string name="badge_premium">Premium</string>
+    <string name="tile_label">My Lamp</string>
+
+    <!-- Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_go_premium">Premium</string>
+    <string name="action_restore_purchases">Restore purchases</string>
+    <string name="action_retry">Try again</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_power">Toggle light</string>
+    <string name="cd_settings">Settings</string>
+    <string name="cd_locked_premium">Premium design, locked</string>
+
+    <!-- Status &amp; modes -->
+    <string name="status_off">Off</string>
+    <string name="status_on">Light on</string>
+    <string name="status_sos">SOS active</string>
+    <string name="status_strobe">Strobe · %1$d Hz</string>
+    <string name="mode_sos">SOS</string>
+    <string name="mode_strobe">Strobe</string>
+    <string name="mode_screen">Screen</string>
+    <string name="no_flash_hint">No LED flash found – the screen light is used instead.</string>
+    <string name="torch_brightness">Brightness</string>
+
+    <!-- Strobe -->
+    <string name="strobe_frequency">Frequency</string>
+    <string name="strobe_hz_value">%1$d Hz</string>
+    <string name="strobe_slow">slow</string>
+    <string name="strobe_medium">medium</string>
+    <string name="strobe_fast">fast</string>
+    <string name="strobe_epilepsy_caption">⚠ Rapid flashing can trigger seizures in people with photosensitive epilepsy.</string>
+    <string name="strobe_warning_title">Photosensitivity warning</string>
+    <string name="strobe_warning_text">The strobe produces rapidly flashing light. This can trigger seizures in people with photosensitive epilepsy. Do not look directly into the light and do not point it at other people\'s eyes.</string>
+    <string name="strobe_warning_confirm">Understood, start</string>
+
+    <!-- Screen light -->
+    <string name="screen_light_title">Screen light</string>
+    <string name="screen_light_brightness">Brightness</string>
+    <string name="screen_light_tap_hint">Tap anywhere to show or hide the controls.</string>
+    <string name="screen_light_toggle_controls">Show or hide controls</string>
+    <string name="color_neutral">Neutral white</string>
+    <string name="color_warm">Warm white</string>
+    <string name="color_cool">Cool white</string>
+    <string name="color_amber">Amber</string>
+    <string name="color_red">Red (night vision)</string>
+
+    <!-- Themes -->
+    <string name="theme_classic">Classic</string>
+    <string name="theme_midnight">Midnight</string>
+    <string name="theme_misty_forest">Misty forest</string>
+    <string name="theme_forest_road">Forest road</string>
+    <string name="theme_glade">Glade</string>
+    <string name="theme_golden_hour">Golden hour</string>
+
+    <!-- Premium hints -->
+    <string name="premium_hint_top_title">Premium active</string>
+    <string name="premium_hint_top_subtitle">Ad-free · full focus on light</string>
+    <string name="premium_hint_bottom">Ad-free thanks to Premium – thank you for your support!</string>
+
+    <!-- Paywall -->
+    <string name="paywall_title">My Lamp Premium</string>
+    <string name="paywall_subtitle">Buy once. Ad-free forever.</string>
+    <string name="paywall_benefit_ads_title">Permanently ad-free</string>
+    <string name="paywall_benefit_ads_text">No more banners – on all your devices with the same Google account.</string>
+    <string name="paywall_benefit_themes_title">4 exclusive designs</string>
+    <string name="paywall_benefit_themes_text">Misty forest, Forest road, Glade and Golden hour.</string>
+    <string name="paywall_benefit_look_title">Gold premium look</string>
+    <string name="paywall_benefit_look_text">Subtle golden accents throughout the app.</string>
+    <string name="paywall_benefit_support_title">Support development</string>
+    <string name="paywall_benefit_support_text">You help keep My Lamp independent and maintained.</string>
+    <string name="paywall_price_once">One-time purchase · %1$s</string>
+    <string name="paywall_price_loading">Loading price from Google Play…</string>
+    <string name="paywall_play_unavailable">Google Play is not available on this device.</string>
+    <string name="paywall_no_subscription">No subscription · no recurring costs</string>
+    <string name="paywall_buy">Buy Premium</string>
+    <string name="paywall_buy_with_price">Buy for %1$s</string>
+    <string name="paywall_already_premium">You are Premium – thank you!</string>
+    <string name="paywall_pending">Your purchase is pending. Premium will be unlocked automatically once Google Play confirms the payment.</string>
+    <string name="paywall_legal">Payment is processed securely by Google Play. Existing purchases of „Remove ads“ are recognised automatically.</string>
+
+    <!-- Celebration -->
+    <string name="celebration_title">Premium unlocked</string>
+    <string name="celebration_text">Thank you for your support! My Lamp is now ad-free and all designs are unlocked.</string>
+    <string name="celebration_continue">Continue</string>
+
+    <!-- Billing messages -->
+    <string name="billing_purchase_success">Premium unlocked – thank you!</string>
+    <string name="billing_pending">Purchase pending – Premium will be unlocked after confirmation.</string>
+    <string name="billing_restored">Purchase restored. Premium is active.</string>
+    <string name="billing_nothing_to_restore">No purchase found for this Google account.</string>
+    <string name="billing_unavailable">Google Play is currently unavailable. Please try again later.</string>
+    <string name="billing_error">The purchase could not be completed. Please try again.</string>
+
+    <!-- Errors -->
+    <string name="error_no_flash">This device has no LED flash. Use the screen light instead.</string>
+    <string name="error_camera_in_use">The flash is currently used by another app.</string>
+    <string name="error_torch_unknown">The flash could not be switched.</string>
+    <string name="error_no_mail_app">No email app found.</string>
+    <string name="error_no_app">No app found to open this link.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_general">General</string>
+    <string name="settings_section_flashlight">Flashlight</string>
+    <string name="settings_section_info">Privacy &amp; information</string>
+    <string name="settings_fullscreen">Fullscreen</string>
+    <string name="settings_fullscreen_desc">Hide status and navigation bar. Swipe from the edge to show them briefly.</string>
+    <string name="settings_nav_bar">Show navigation bar</string>
+    <string name="settings_nav_bar_desc">Off: only the navigation bar is hidden.</string>
+    <string name="settings_animations">Animations</string>
+    <string name="settings_animations_desc">Also respects the system setting „Remove animations“.</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_desc">Gentle vibration on taps and toggles.</string>
+    <string name="settings_theme">Design</string>
+    <string name="settings_theme_desc">Background and atmosphere of the main screen.</string>
+    <string name="settings_default_source">Power button controls</string>
+    <string name="source_led">LED flash</string>
+    <string name="source_screen">Screen light</string>
+    <string name="settings_start_behavior">When the app starts</string>
+    <string name="start_off">Stay off</string>
+    <string name="start_torch">Light on</string>
+    <string name="start_screen">Screen light</string>
+    <string name="settings_strobe_speed">Strobe speed</string>
+    <string name="settings_shake">Shake to toggle</string>
+    <string name="settings_shake_desc">Shake the phone firmly to toggle the light while the app is open.</string>
+    <string name="settings_shake_unavailable">No motion sensor available on this device.</string>
+    <string name="settings_shake_sensitivity">Sensitivity</string>
+    <string name="sensitivity_low">Low</string>
+    <string name="sensitivity_medium">Medium</string>
+    <string name="sensitivity_high">High</string>
+    <string name="premium_status_active">Premium active</string>
+    <string name="premium_status_active_desc">Ad-free · all designs unlocked</string>
+    <string name="premium_status_free">Free version</string>
+    <string name="premium_status_free_desc">All flashlight features are free. Premium removes ads.</string>
+    <string name="premium_status_pending">Purchase pending</string>
+    <string name="settings_premium_top_hint">„Premium active“ hint</string>
+    <string name="settings_premium_top_hint_desc">Small hint at the top of the main screen.</string>
+    <string name="settings_premium_bottom_hint">„Ad-free“ hint</string>
+    <string name="settings_premium_bottom_hint_desc">Thank-you note where the ad used to be.</string>
+    <string name="settings_restore_desc">Re-check purchases with Google Play.</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_privacy_options">Privacy options</string>
+    <string name="settings_privacy_options_desc">Change your consent for personalised ads.</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_support">Contact support</string>
+    <string name="settings_play_store">My Lamp on Google Play</string>
+    <string name="settings_play_store_desc">Rate the app or check for updates.</string>
+    <string name="settings_safety_notice">Safety: Do not shine the LED directly into eyes. The strobe can trigger seizures in people with photosensitive epilepsy. My Lamp is not a substitute for professional emergency equipment.</string>
+
+    <!-- Debug -->
+    <string name="debug_section" translatable="false">Developer (debug only)</string>
+    <string name="debug_simulation" translatable="false">Premium view (simulation only)</string>
+    <string name="debug_celebration" translatable="false">Show unlock animation</string>
+    <string name="debug_reset_hints" translatable="false">Reset hints &amp; warnings</string>
+    <string name="debug_reset_consent" translatable="false">Reset ad consent (UMP)</string>
 </resources>
