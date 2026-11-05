@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,138 +101,183 @@ fun PaywallScreen(
                     onClick = onBack,
                 )
             }
-            Column(
-                Modifier
-                    .widthIn(max = 520.dp)
-                    .graphicsLayer {
-                        alpha = entrance.value
-                        translationY = (1f - entrance.value) * 40.dp.toPx()
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(Modifier.height(12.dp))
-                Box(
-                    Modifier
-                        .size(92.dp)
-                        .clip(CircleShape)
-                        .background(LampColors.GoldGradient),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(painterResource(R.drawable.ic_crown), null, tint = LampColors.Night, modifier = Modifier.size(46.dp))
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                // Tablet/Handy quer: Titel + Kauf links, Vorteile rechts
+                val wide = maxWidth >= 720.dp
+                val anim = Modifier.graphicsLayer {
+                    alpha = entrance.value
+                    translationY = (1f - entrance.value) * 40.dp.toPx()
                 }
-                Spacer(Modifier.height(20.dp))
+                if (wide) {
+                    Row(
+                        anim.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f, fill = false).widthIn(max = 480.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            PaywallHero()
+                            Spacer(Modifier.height(24.dp))
+                            PaywallPurchase(billing, isPremium, onBuy, onRestore, onRetry)
+                        }
+                        Column(Modifier.weight(1f, fill = false).widthIn(max = 520.dp)) {
+                            PaywallBenefits()
+                        }
+                    }
+                } else {
+                    Column(
+                        anim.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Column(Modifier.widthIn(max = 520.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            PaywallHero()
+                            Spacer(Modifier.height(28.dp))
+                            PaywallBenefits()
+                            Spacer(Modifier.height(24.dp))
+                            PaywallPurchase(billing, isPremium, onBuy, onRestore, onRetry)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaywallHero() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(12.dp))
+        Box(
+            Modifier
+                .size(92.dp)
+                .clip(CircleShape)
+                .background(LampColors.GoldGradient),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(painterResource(R.drawable.ic_crown), null, tint = LampColors.Night, modifier = Modifier.size(46.dp))
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            stringResource(R.string.paywall_title),
+            style = MaterialTheme.typography.headlineMedium,
+            color = LampColors.Text,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() },
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.paywall_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = LampColors.TextMuted,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun PaywallBenefits() {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(24.dp), color = LampColors.Card)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Benefit(stringResource(R.string.paywall_benefit_ads_title), stringResource(R.string.paywall_benefit_ads_text))
+        Benefit(stringResource(R.string.paywall_benefit_themes_title), stringResource(R.string.paywall_benefit_themes_text))
+        Benefit(stringResource(R.string.paywall_benefit_look_title), stringResource(R.string.paywall_benefit_look_text))
+        Benefit(stringResource(R.string.paywall_benefit_support_title), stringResource(R.string.paywall_benefit_support_text))
+    }
+}
+
+@Composable
+private fun PaywallPurchase(
+    billing: BillingState,
+    isPremium: Boolean,
+    onBuy: () -> Unit,
+    onRestore: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        when {
+            isPremium -> {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .glass(RoundedCornerShape(50), color = LampColors.GoldSubtle, borderColor = LampColors.Gold.copy(alpha = 0.5f))
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Check, null, tint = LampColors.Gold)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.paywall_already_premium), color = LampColors.Gold, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            billing.entitlement == Entitlement.PENDING -> {
                 Text(
-                    stringResource(R.string.paywall_title),
-                    style = MaterialTheme.typography.headlineMedium,
+                    stringResource(R.string.paywall_pending),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LampColors.Gold,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            else -> {
+                val price = billing.formattedPrice
+                Text(
+                    if (price != null) stringResource(R.string.paywall_price_once, price)
+                    else if (billing.billingUnavailable) stringResource(R.string.paywall_play_unavailable)
+                    else stringResource(R.string.paywall_price_loading),
+                    style = MaterialTheme.typography.titleMedium,
                     color = LampColors.Text,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.semantics { heading() },
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    stringResource(R.string.paywall_subtitle),
-                    style = MaterialTheme.typography.bodyLarge,
+                    stringResource(R.string.paywall_no_subscription),
+                    style = MaterialTheme.typography.bodySmall,
                     color = LampColors.TextMuted,
                     textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(28.dp))
-
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .glass(RoundedCornerShape(24.dp), color = LampColors.Card)
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = onBuy,
+                    enabled = price != null && !billing.purchaseInProgress,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LampColors.Gold,
+                        contentColor = LampColors.Night,
+                        disabledContainerColor = LampColors.Gold.copy(alpha = 0.25f),
+                        disabledContentColor = LampColors.Night.copy(alpha = 0.6f),
+                    ),
                 ) {
-                    Benefit(stringResource(R.string.paywall_benefit_ads_title), stringResource(R.string.paywall_benefit_ads_text))
-                    Benefit(stringResource(R.string.paywall_benefit_themes_title), stringResource(R.string.paywall_benefit_themes_text))
-                    Benefit(stringResource(R.string.paywall_benefit_look_title), stringResource(R.string.paywall_benefit_look_text))
-                    Benefit(stringResource(R.string.paywall_benefit_support_title), stringResource(R.string.paywall_benefit_support_text))
-                }
-                Spacer(Modifier.height(24.dp))
-
-                when {
-                    isPremium -> {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .glass(RoundedCornerShape(50), color = LampColors.GoldSubtle, borderColor = LampColors.Gold.copy(alpha = 0.5f))
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(Icons.Filled.Check, null, tint = LampColors.Gold)
-                            Spacer(Modifier.size(8.dp))
-                            Text(stringResource(R.string.paywall_already_premium), color = LampColors.Gold, style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    billing.entitlement == Entitlement.PENDING -> {
+                    if (billing.purchaseInProgress) {
+                        CircularProgressIndicator(Modifier.size(22.dp), color = LampColors.Night, strokeWidth = 2.dp)
+                    } else {
                         Text(
-                            stringResource(R.string.paywall_pending),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = LampColors.Gold,
-                            textAlign = TextAlign.Center,
+                            if (price != null) stringResource(R.string.paywall_buy_with_price, price)
+                            else stringResource(R.string.paywall_buy),
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
-                    else -> {
-                        val price = billing.formattedPrice
-                        Text(
-                            if (price != null) stringResource(R.string.paywall_price_once, price)
-                            else if (billing.billingUnavailable) stringResource(R.string.paywall_play_unavailable)
-                            else stringResource(R.string.paywall_price_loading),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = LampColors.Text,
-                            textAlign = TextAlign.Center,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            stringResource(R.string.paywall_no_subscription),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = LampColors.TextMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = onBuy,
-                            enabled = price != null && !billing.purchaseInProgress,
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = LampColors.Gold,
-                                contentColor = LampColors.Night,
-                                disabledContainerColor = LampColors.Gold.copy(alpha = 0.25f),
-                                disabledContentColor = LampColors.Night.copy(alpha = 0.6f),
-                            ),
-                        ) {
-                            if (billing.purchaseInProgress) {
-                                CircularProgressIndicator(Modifier.size(22.dp), color = LampColors.Night, strokeWidth = 2.dp)
-                            } else {
-                                Text(
-                                    if (price != null) stringResource(R.string.paywall_buy_with_price, price)
-                                    else stringResource(R.string.paywall_buy),
-                                    style = MaterialTheme.typography.labelLarge,
-                                )
-                            }
-                        }
-                        if (price == null) {
-                            TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry), color = LampColors.TextMuted) }
-                        }
-                    }
                 }
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onRestore) {
-                    Text(stringResource(R.string.action_restore_purchases), color = LampColors.Gold)
+                if (price == null) {
+                    TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry), color = LampColors.TextMuted) }
                 }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.paywall_legal),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LampColors.TextFaint,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(24.dp))
             }
         }
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onRestore) {
+            Text(stringResource(R.string.action_restore_purchases), color = LampColors.Gold)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.paywall_legal),
+            style = MaterialTheme.typography.bodySmall,
+            color = LampColors.TextFaint,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
     }
 }
 

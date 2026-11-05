@@ -54,6 +54,12 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import dev.flondy.mylamp.ui.components.TileSize
 import dev.flondy.mylamp.R
 import dev.flondy.mylamp.ads.AdaptiveAdBanner
 import dev.flondy.mylamp.data.LampThemeId
@@ -147,8 +153,10 @@ private fun ThemedBackground(visual: LampVisual, isOn: Boolean, accent: Color) {
                 drawRect(
                     Brush.radialGradient(
                         listOf(accent.copy(alpha = 0.22f * glow), Color.Transparent),
-                        center = Offset(size.width / 2, size.height * 0.42f),
-                        radius = size.maxDimension * 0.6f,
+                        // Im Querformat sitzt der Power-Button in der linken Hälfte
+                        center = if (size.width > size.height) Offset(size.width * 0.27f, size.height * 0.55f)
+                        else Offset(size.width / 2, size.height * 0.42f),
+                        radius = size.maxDimension * (if (size.width > size.height) 0.45f else 0.6f),
                     )
                 )
             }
@@ -156,10 +164,22 @@ private fun ThemedBackground(visual: LampVisual, isOn: Boolean, accent: Color) {
     }
 }
 
+/** Layout-Klassen nach verfügbarer Fläche (nicht nach Gerätetyp). */
+enum class HomeLayout { PHONE_PORTRAIT, PHONE_LANDSCAPE, TABLET_PORTRAIT, TABLET_LANDSCAPE }
+
+fun homeLayoutFor(width: Dp, height: Dp): HomeLayout {
+    val landscape = width > height
+    val tablet = minOf(width.value, height.value) >= 600f || (landscape && width >= 840.dp && height >= 480.dp)
+    return when {
+        tablet && landscape -> HomeLayout.TABLET_LANDSCAPE
+        tablet -> HomeLayout.TABLET_PORTRAIT
+        landscape -> HomeLayout.PHONE_LANDSCAPE
+        else -> HomeLayout.PHONE_PORTRAIT
+    }
+}
+
 @Composable
 private fun HomeContent(state: MainUiState, actions: HomeActions, padBottom: Boolean) {
-    val motion = LocalMotion.current
-    val accent = accentFor(state.mode)
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -168,131 +188,209 @@ private fun HomeContent(state: MainUiState, actions: HomeActions, padBottom: Boo
                 else WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             )
     ) {
-        val buttonSize = min(min(maxWidth * 0.5f, maxHeight * 0.28f), 230.dp).coerceAtLeast(120.dp)
-        val compact = maxHeight < 560.dp
+        val layout = homeLayoutFor(maxWidth, maxHeight)
+        val tablet = layout == HomeLayout.TABLET_PORTRAIT || layout == HomeLayout.TABLET_LANDSCAPE
+        val sidePadding = when {
+            tablet -> 40.dp
+            layout == HomeLayout.PHONE_LANDSCAPE -> 24.dp
+            else -> 20.dp
+        }
+        val availableHeight = maxHeight
+        val availableWidth = maxWidth - sidePadding * 2
 
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = sidePadding),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TopBar(state, actions)
-            PremiumHint(
-                visible = state.isPremium && state.settings.showPremiumTopHint,
-                title = stringResource(R.string.premium_hint_top_title),
-                subtitle = stringResource(R.string.premium_hint_top_subtitle),
-                onClose = actions.onCloseTopHint,
-                modifier = Modifier.padding(top = 8.dp).widthIn(max = 520.dp),
-            )
-
-            Spacer(Modifier.weight(1f))
-
-            val statusText = when (state.mode) {
-                LightMode.OFF -> stringResource(R.string.status_off)
-                LightMode.TORCH -> stringResource(R.string.status_on)
-                LightMode.SOS -> stringResource(R.string.status_sos)
-                LightMode.STROBE -> stringResource(R.string.status_strobe, state.strobeHz.roundToInt())
-            }
-            PowerButton(
-                isOn = state.isLightOn,
-                accent = accent,
-                isPremium = state.isPremium,
-                onClick = actions.onPower,
-                contentDescription = stringResource(R.string.cd_power),
-                stateText = statusText,
-                size = buttonSize,
-            )
-            AnimatedContent(
-                targetState = statusText,
-                transitionSpec = { fadeIn(motion.spec(tween(250))) togetherWith fadeOut(motion.spec(tween(200))) },
-                label = "status",
-            ) { text ->
-                Text(
-                    text = text.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (state.isLightOn) accent else LampColors.TextMuted,
-                )
-            }
-            if (!state.hasFlash) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.no_flash_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LampColors.TextMuted,
-                )
-            }
-            AnimatedVisibility(
-                visible = state.mode == LightMode.TORCH && state.supportsStrength,
-                enter = fadeIn(motion.spec(tween(300))) + expandVertically(motion.spec(tween(300))),
-                exit = fadeOut(motion.spec(tween(200))) + shrinkVertically(motion.spec(tween(200))),
-            ) {
-                TorchStrengthControl(
-                    value = state.torchStrength,
-                    onChange = actions.onStrength,
-                    onChangeFinished = actions.onStrengthDone,
-                    modifier = Modifier.padding(top = 16.dp).widthIn(max = 420.dp).fillMaxWidth(),
+            val landscape = layout == HomeLayout.PHONE_LANDSCAPE || layout == HomeLayout.TABLET_LANDSCAPE
+            // Im Querformat sitzt der Premium-Hinweis in der Kopfzeile und kostet so keine Höhe.
+            TopBar(state, actions, inlineHint = landscape)
+            if (!landscape) {
+                PremiumHint(
+                    visible = state.isPremium && state.settings.showPremiumTopHint,
+                    title = stringResource(R.string.premium_hint_top_title),
+                    subtitle = stringResource(R.string.premium_hint_top_subtitle),
+                    onClose = actions.onCloseTopHint,
+                    modifier = Modifier.padding(top = 8.dp).widthIn(max = 560.dp),
                 )
             }
 
-            Spacer(Modifier.weight(1f))
+            when (layout) {
+                HomeLayout.PHONE_PORTRAIT, HomeLayout.TABLET_PORTRAIT -> {
+                    val maxButton = if (tablet) 320.dp else 230.dp
+                    val buttonSize = min(min(availableWidth * 0.55f, availableHeight * 0.28f), maxButton).coerceAtLeast(120.dp)
+                    val contentWidth = if (tablet) 640.dp else 520.dp
+                    Spacer(Modifier.weight(1f))
+                    PowerSection(state, actions, buttonSize, strengthWidth = if (tablet) 480.dp else 420.dp)
+                    Spacer(Modifier.weight(1f))
+                    StrobeSection(state, actions, Modifier.padding(bottom = 12.dp).widthIn(max = contentWidth).fillMaxWidth())
+                    ModeTilesRow(
+                        state, actions,
+                        size = if (tablet) TileSize.Large else TileSize.Regular,
+                        modifier = Modifier.widthIn(max = contentWidth).fillMaxWidth(),
+                        spacing = if (tablet) 16.dp else 12.dp,
+                    )
+                    Spacer(Modifier.height(if (tablet) 32.dp else if (availableHeight < 560.dp) 12.dp else 20.dp))
+                }
 
-            AnimatedVisibility(
-                visible = state.mode == LightMode.STROBE,
-                enter = fadeIn(motion.spec(tween(300))) + expandVertically(motion.spec(tween(300))),
-                exit = fadeOut(motion.spec(tween(200))) + shrinkVertically(motion.spec(tween(200))),
-            ) {
-                StrobeControl(
-                    hz = state.strobeHz,
-                    onChange = actions.onStrobeHz,
-                    onChangeFinished = actions.onStrobeHzDone,
-                    modifier = Modifier.padding(bottom = 12.dp).widthIn(max = 520.dp).fillMaxWidth(),
-                )
+                HomeLayout.PHONE_LANDSCAPE, HomeLayout.TABLET_LANDSCAPE -> {
+                    // Zwei Spalten: links das Licht, rechts die Modi – nutzt die Breite statt zu scrollen.
+                    val paneWidth = availableWidth / 2
+                    val maxButton = if (tablet) 320.dp else 200.dp
+                    val buttonSize = min(min(availableHeight * 0.42f, paneWidth * 0.55f), maxButton).coerceAtLeast(96.dp)
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(if (tablet) 40.dp else 20.dp),
+                    ) {
+                        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                            PowerSection(state, actions, buttonSize, strengthWidth = if (tablet) 420.dp else 300.dp)
+                        }
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            val paneContent = Modifier.widthIn(max = if (tablet) 520.dp else 420.dp).fillMaxWidth()
+                            StrobeSection(state, actions, paneContent.padding(bottom = if (tablet) 16.dp else 10.dp), compact = !tablet)
+                            ModeTilesRow(
+                                state, actions,
+                                size = if (tablet) TileSize.Large else TileSize.Compact,
+                                modifier = paneContent,
+                                spacing = if (tablet) 16.dp else 10.dp,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(if (tablet) 24.dp else 8.dp))
+                }
             }
-
-            Row(
-                modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                ModeTile(
-                    label = stringResource(R.string.mode_sos),
-                    painter = painterResource(R.drawable.ic_sos),
-                    active = state.mode == LightMode.SOS,
-                    accent = LampColors.Sos,
-                    onClick = actions.onSos,
-                    modifier = Modifier.weight(1f),
-                )
-                ModeTile(
-                    label = stringResource(R.string.mode_strobe),
-                    painter = painterResource(R.drawable.ic_strobe),
-                    active = state.mode == LightMode.STROBE,
-                    accent = LampColors.Strobe,
-                    onClick = actions.onStrobe,
-                    modifier = Modifier.weight(1f),
-                )
-                ModeTile(
-                    label = stringResource(R.string.mode_screen),
-                    painter = painterResource(R.drawable.ic_phone_android),
-                    active = false,
-                    accent = LampColors.Gold,
-                    onClick = actions.onScreenLight,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(if (compact) 12.dp else 20.dp))
         }
     }
 }
 
 @Composable
-private fun TopBar(state: MainUiState, actions: HomeActions) {
+private fun PowerSection(state: MainUiState, actions: HomeActions, buttonSize: Dp, strengthWidth: Dp) {
+    val motion = LocalMotion.current
+    val accent = accentFor(state.mode)
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val statusText = when (state.mode) {
+            LightMode.OFF -> stringResource(R.string.status_off)
+            LightMode.TORCH -> stringResource(R.string.status_on)
+            LightMode.SOS -> stringResource(R.string.status_sos)
+            LightMode.STROBE -> stringResource(R.string.status_strobe, state.strobeHz.roundToInt())
+        }
+        PowerButton(
+            isOn = state.isLightOn,
+            accent = accent,
+            isPremium = state.isPremium,
+            onClick = actions.onPower,
+            contentDescription = stringResource(R.string.cd_power),
+            stateText = statusText,
+            size = buttonSize,
+        )
+        AnimatedContent(
+            targetState = statusText,
+            transitionSpec = { fadeIn(motion.spec(tween(250))) togetherWith fadeOut(motion.spec(tween(200))) },
+            label = "status",
+        ) { text ->
+            Text(
+                text = text.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (state.isLightOn) accent else LampColors.TextMuted,
+            )
+        }
+        if (!state.hasFlash) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.no_flash_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = LampColors.TextMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = strengthWidth),
+            )
+        }
+        AnimatedVisibility(
+            visible = state.mode == LightMode.TORCH && state.supportsStrength,
+            enter = fadeIn(motion.spec(tween(300))) + expandVertically(motion.spec(tween(300))),
+            exit = fadeOut(motion.spec(tween(200))) + shrinkVertically(motion.spec(tween(200))),
+        ) {
+            TorchStrengthControl(
+                value = state.torchStrength,
+                onChange = actions.onStrength,
+                onChangeFinished = actions.onStrengthDone,
+                modifier = Modifier.padding(top = 16.dp).widthIn(max = strengthWidth).fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StrobeSection(state: MainUiState, actions: HomeActions, modifier: Modifier, compact: Boolean = false) {
+    val motion = LocalMotion.current
+    AnimatedVisibility(
+        visible = state.mode == LightMode.STROBE,
+        enter = fadeIn(motion.spec(tween(300))) + expandVertically(motion.spec(tween(300))),
+        exit = fadeOut(motion.spec(tween(200))) + shrinkVertically(motion.spec(tween(200))),
+    ) {
+        StrobeControl(
+            hz = state.strobeHz,
+            onChange = actions.onStrobeHz,
+            onChangeFinished = actions.onStrobeHzDone,
+            modifier = modifier,
+            compact = compact,
+        )
+    }
+}
+
+@Composable
+private fun ModeTilesRow(state: MainUiState, actions: HomeActions, size: TileSize, modifier: Modifier, spacing: Dp) {
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(spacing)) {
+        ModeTile(
+            label = stringResource(R.string.mode_sos),
+            painter = painterResource(R.drawable.ic_sos),
+            active = state.mode == LightMode.SOS,
+            accent = LampColors.Sos,
+            onClick = actions.onSos,
+            modifier = Modifier.weight(1f),
+            size = size,
+        )
+        ModeTile(
+            label = stringResource(R.string.mode_strobe),
+            painter = painterResource(R.drawable.ic_strobe),
+            active = state.mode == LightMode.STROBE,
+            accent = LampColors.Strobe,
+            onClick = actions.onStrobe,
+            modifier = Modifier.weight(1f),
+            size = size,
+        )
+        ModeTile(
+            label = stringResource(R.string.mode_screen),
+            painter = painterResource(R.drawable.ic_phone_android),
+            active = false,
+            accent = LampColors.Gold,
+            onClick = actions.onScreenLight,
+            modifier = Modifier.weight(1f),
+            size = size,
+        )
+    }
+}
+
+@Composable
+private fun TopBar(state: MainUiState, actions: HomeActions, inlineHint: Boolean = false) {
     Row(
         Modifier
             .fillMaxWidth()
             .padding(top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(if (inlineHint) 0.6f else 1f)) {
             Text(
                 stringResource(R.string.app_name).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
@@ -305,6 +403,28 @@ private fun TopBar(state: MainUiState, actions: HomeActions) {
                 color = if (state.isPremium) LampColors.Gold else LampColors.TextFaint,
             )
         }
+        if (inlineHint) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                PremiumHint(
+                    visible = state.isPremium && state.settings.showPremiumTopHint,
+                    title = stringResource(R.string.premium_hint_top_title),
+                    subtitle = stringResource(R.string.premium_hint_top_subtitle),
+                    onClose = actions.onCloseTopHint,
+                    modifier = Modifier.widthIn(max = 460.dp),
+                )
+            }
+            Box(Modifier.weight(0.6f), contentAlignment = Alignment.CenterEnd) {
+                TopBarActions(state, actions)
+            }
+        } else {
+            TopBarActions(state, actions)
+        }
+    }
+}
+
+@Composable
+private fun TopBarActions(state: MainUiState, actions: HomeActions) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         if (!state.isPremium) {
             Row(
                 modifier = Modifier

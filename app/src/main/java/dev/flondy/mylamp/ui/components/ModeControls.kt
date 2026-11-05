@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
@@ -65,12 +66,13 @@ fun ModeTile(
     accent: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    size: TileSize = TileSize.Regular,
 ) {
     val motion = LocalMotion.current
     val haptics = LocalHaptics.current
     val interaction = remember { MutableInteractionSource() }
     val bg by animateColorAsState(
-        if (active) accent.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.04f),
+        if (active) accent.copy(alpha = 0.22f).compositeOver(LampColors.Night.copy(alpha = 0.55f)) else LampColors.Glass,
         motion.spec(tween(350)), label = "tileBg",
     )
     val border by animateColorAsState(
@@ -95,30 +97,37 @@ fun ModeTile(
                 haptics.click()
                 onClick()
             }
-            .padding(vertical = 14.dp, horizontal = 8.dp),
+            .padding(vertical = size.verticalPadding, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(size.circle)
                     .clip(CircleShape)
                     .background(iconBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(painter, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+                Icon(painter, contentDescription = null, tint = iconTint, modifier = Modifier.size(size.icon))
             }
             if (active) ActiveDot(accent, Modifier.align(Alignment.TopEnd))
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(if (size == TileSize.Compact) 4.dp else 8.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = if (size == TileSize.Large) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
             color = if (active) LampColors.Text else LampColors.TextMuted,
             textAlign = TextAlign.Center,
             maxLines = 1,
         )
     }
+}
+
+/** Größenstufen der Moduskacheln: kompakt (Handy quer), normal (Handy), groß (Tablet). */
+enum class TileSize(val circle: androidx.compose.ui.unit.Dp, val icon: androidx.compose.ui.unit.Dp, val verticalPadding: androidx.compose.ui.unit.Dp) {
+    Compact(38.dp, 20.dp, 8.dp),
+    Regular(46.dp, 24.dp, 14.dp),
+    Large(58.dp, 28.dp, 18.dp),
 }
 
 /** Kleiner pulsierender Statuspunkt (nur solange aktiv). */
@@ -148,6 +157,8 @@ fun StrobeControl(
     onChange: (Float) -> Unit,
     onChangeFinished: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Kompakt (Handy quer): ohne Balkenanzeige, damit alles ohne Scrollen passt. */
+    compact: Boolean = false,
 ) {
     val haptics = LocalHaptics.current
     val motion = LocalMotion.current
@@ -160,7 +171,7 @@ fun StrobeControl(
     Column(
         modifier = modifier
             .glass(RoundedCornerShape(22.dp))
-            .padding(horizontal = 18.dp, vertical = 14.dp)
+            .padding(horizontal = 18.dp, vertical = if (compact) 8.dp else 14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -190,7 +201,9 @@ fun StrobeControl(
             Spacer(Modifier.width(8.dp))
             Text(speedLabel, style = MaterialTheme.typography.bodySmall, color = LampColors.TextFaint)
         }
-        SpeedMeter(fraction = (hz - LightPatterns.STROBE_MIN_HZ) / (LightPatterns.STROBE_MAX_HZ - LightPatterns.STROBE_MIN_HZ))
+        if (!compact) {
+            SpeedMeter(fraction = (hz - LightPatterns.STROBE_MIN_HZ) / (LightPatterns.STROBE_MAX_HZ - LightPatterns.STROBE_MIN_HZ))
+        }
         Slider(
             value = hz,
             onValueChange = {

@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -114,7 +116,10 @@ fun CelebrationOverlay(visible: Boolean, onDismiss: () -> Unit) {
             }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.widthIn(max = 420.dp).padding(32.dp),
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()) // Handy quer: wenig Höhe
+                    .padding(horizontal = 32.dp, vertical = 16.dp),
             ) {
                 Box(
                     Modifier

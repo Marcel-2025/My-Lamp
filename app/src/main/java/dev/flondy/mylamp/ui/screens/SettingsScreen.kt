@@ -8,6 +8,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -109,157 +112,202 @@ data class SettingsActions(
 
 @Composable
 fun SettingsScreen(state: MainUiState, shakeAvailable: Boolean, actions: SettingsActions) {
-    val s = state.settings
     Box(Modifier.fillMaxSize().background(LampColors.NightGradient)) {
-        LazyColumn(
-            modifier = Modifier
+        BoxWithConstraints(
+            Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .windowInsetsPadding(WindowInsets.safeDrawing)
         ) {
-            item {
-                Row(
-                    Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(bottom = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            // Breite Bildschirme (Tablet quer, große Tablets hoch): zwei Spalten statt einer langen Liste
+            val twoColumns = maxWidth >= 840.dp
+            val sidePadding = if (maxWidth >= 600.dp) 32.dp else 20.dp
+            if (twoColumns) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = sidePadding, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    GlassIconButton(
-                        painter = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack),
-                        contentDescription = stringResource(R.string.action_back),
-                        onClick = actions.onBack,
-                    )
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = LampColors.Text,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                }
-            }
-
-            // ---------------------------------------------------------------- Premium
-            item { PremiumStatusCard(state, actions) }
-
-            // ---------------------------------------------------------------- Allgemein
-            item { SectionHeader(stringResource(R.string.settings_section_general)) }
-            item {
-                LampCard(Modifier.widthIn(max = 640.dp).fillMaxWidth()) {
-                    SwitchRow(stringResource(R.string.settings_fullscreen), stringResource(R.string.settings_fullscreen_desc), s.fullscreen, actions.setFullscreen)
-                    RowDivider()
-                    SwitchRow(
-                        stringResource(R.string.settings_nav_bar), stringResource(R.string.settings_nav_bar_desc),
-                        checked = s.showNavigationBar && !s.fullscreen,
-                        onChange = actions.setShowNavigationBar,
-                        enabled = !s.fullscreen,
-                    )
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.settings_animations), stringResource(R.string.settings_animations_desc), s.animationsEnabled, actions.setAnimations)
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.settings_haptics), stringResource(R.string.settings_haptics_desc), s.hapticsEnabled, actions.setHaptics)
-                    RowDivider()
-                    Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
-                        Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = LampColors.Text)
-                        Text(stringResource(R.string.settings_theme_desc), style = MaterialTheme.typography.bodySmall, color = LampColors.TextMuted)
-                    }
-                    ThemePicker(selected = s.theme, isPremium = state.isPremium, onSelect = actions.selectTheme)
-                    Spacer(Modifier.height(10.dp))
-                }
-            }
-
-            // ---------------------------------------------------------------- Taschenlampe
-            item { SectionHeader(stringResource(R.string.settings_section_flashlight)) }
-            item {
-                LampCard(Modifier.widthIn(max = 640.dp).fillMaxWidth()) {
-                    ChoiceRow(
-                        title = stringResource(R.string.settings_default_source),
-                        options = listOf(
-                            DefaultLightSource.LED to stringResource(R.string.source_led),
-                            DefaultLightSource.SCREEN to stringResource(R.string.source_screen),
-                        ),
-                        selected = s.defaultLightSource,
-                        onSelect = actions.setDefaultSource,
-                    )
-                    RowDivider()
-                    ChoiceRow(
-                        title = stringResource(R.string.settings_start_behavior),
-                        options = listOf(
-                            StartBehavior.OFF to stringResource(R.string.start_off),
-                            StartBehavior.TORCH_ON to stringResource(R.string.start_torch),
-                            StartBehavior.SCREEN_LIGHT to stringResource(R.string.start_screen),
-                        ),
-                        selected = s.startBehavior,
-                        onSelect = actions.setStartBehavior,
-                    )
-                    RowDivider()
-                    StrobeSliderRow(s.strobeHz, actions.setStrobeHz)
-                    RowDivider()
-                    SwitchRow(
-                        stringResource(R.string.settings_shake),
-                        if (shakeAvailable) stringResource(R.string.settings_shake_desc) else stringResource(R.string.settings_shake_unavailable),
-                        checked = s.shakeEnabled && shakeAvailable,
-                        onChange = actions.setShakeEnabled,
-                        enabled = shakeAvailable,
-                    )
-                    if (s.shakeEnabled && shakeAvailable) {
-                        ChoiceRow(
-                            title = stringResource(R.string.settings_shake_sensitivity),
-                            options = listOf(
-                                ShakeSensitivity.LOW to stringResource(R.string.sensitivity_low),
-                                ShakeSensitivity.MEDIUM to stringResource(R.string.sensitivity_medium),
-                                ShakeSensitivity.HIGH to stringResource(R.string.sensitivity_high),
-                            ),
-                            selected = s.shakeSensitivity,
-                            onSelect = actions.setShakeSensitivity,
-                        )
+                    Column(Modifier.widthIn(max = 1280.dp).fillMaxWidth()) {
+                        SettingsHeader(actions)
+                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
+                            Column(Modifier.weight(1f)) {
+                                PremiumStatusCard(state, actions)
+                                GeneralSection(state, actions)
+                            }
+                            Column(Modifier.weight(1f)) {
+                                FlashlightSection(state, shakeAvailable, actions)
+                                InfoSection(state, actions)
+                                SafetyNotice()
+                                if (BuildConfig.DEBUG) DebugSection(state, actions)
+                            }
+                        }
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
-            }
-
-            // ---------------------------------------------------------------- Datenschutz & Info
-            item { SectionHeader(stringResource(R.string.settings_section_info)) }
-            item {
-                LampCard(Modifier.widthIn(max = 640.dp).fillMaxWidth()) {
-                    InfoRow(stringResource(R.string.settings_version), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-                    RowDivider()
-                    InfoRow(stringResource(R.string.settings_developer), "Flondy")
-                    RowDivider()
-                    if (state.ads.privacyOptionsRequired) {
-                        NavRow(stringResource(R.string.settings_privacy_options), stringResource(R.string.settings_privacy_options_desc), actions.openPrivacyOptions)
-                        RowDivider()
-                    }
-                    actions.openPrivacyPolicy?.let {
-                        NavRow(stringResource(R.string.settings_privacy_policy), null, it)
-                        RowDivider()
-                    }
-                    NavRow(stringResource(R.string.settings_support), BuildConfig.SUPPORT_EMAIL, actions.contactSupport)
-                    RowDivider()
-                    NavRow(stringResource(R.string.settings_play_store), stringResource(R.string.settings_play_store_desc), actions.openPlayStore)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = sidePadding, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    val m = Modifier.widthIn(max = 640.dp).fillMaxWidth()
+                    item { Box(m) { SettingsHeader(actions) } }
+                    item { Box(m) { PremiumStatusCard(state, actions) } }
+                    item { Column(m) { GeneralSection(state, actions) } }
+                    item { Column(m) { FlashlightSection(state, shakeAvailable, actions) } }
+                    item { Column(m) { InfoSection(state, actions) } }
+                    item { Box(m) { SafetyNotice() } }
+                    if (BuildConfig.DEBUG) item { Column(m) { DebugSection(state, actions) } }
+                    item { Spacer(Modifier.height(24.dp)) }
                 }
             }
-            item {
-                Text(
-                    stringResource(R.string.settings_safety_notice),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = LampColors.TextFaint,
-                    modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp),
-                )
-            }
-
-            if (BuildConfig.DEBUG) {
-                item { SectionHeader(stringResource(R.string.debug_section)) }
-                item { DebugCard(state, actions) }
-            }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
+}
+
+@Composable
+private fun SettingsHeader(actions: SettingsActions) {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GlassIconButton(
+            painter = rememberVectorPainter(Icons.AutoMirrored.Filled.ArrowBack),
+            contentDescription = stringResource(R.string.action_back),
+            onClick = actions.onBack,
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            stringResource(R.string.settings_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = LampColors.Text,
+            modifier = Modifier.semantics { heading() },
+        )
+    }
+}
+
+@Composable
+private fun GeneralSection(state: MainUiState, actions: SettingsActions) {
+    val s = state.settings
+    SectionHeader(stringResource(R.string.settings_section_general))
+    LampCard(Modifier.fillMaxWidth()) {
+        SwitchRow(stringResource(R.string.settings_fullscreen), stringResource(R.string.settings_fullscreen_desc), s.fullscreen, actions.setFullscreen)
+        RowDivider()
+        SwitchRow(
+            stringResource(R.string.settings_nav_bar), stringResource(R.string.settings_nav_bar_desc),
+            checked = s.showNavigationBar && !s.fullscreen,
+            onChange = actions.setShowNavigationBar,
+            enabled = !s.fullscreen,
+        )
+        RowDivider()
+        SwitchRow(stringResource(R.string.settings_animations), stringResource(R.string.settings_animations_desc), s.animationsEnabled, actions.setAnimations)
+        RowDivider()
+        SwitchRow(stringResource(R.string.settings_haptics), stringResource(R.string.settings_haptics_desc), s.hapticsEnabled, actions.setHaptics)
+        RowDivider()
+        Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+            Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.titleSmall, color = LampColors.Text)
+            Text(stringResource(R.string.settings_theme_desc), style = MaterialTheme.typography.bodySmall, color = LampColors.TextMuted)
+        }
+        ThemePicker(selected = s.theme, isPremium = state.isPremium, onSelect = actions.selectTheme)
+        Spacer(Modifier.height(10.dp))
+    }
+}
+
+@Composable
+private fun FlashlightSection(state: MainUiState, shakeAvailable: Boolean, actions: SettingsActions) {
+    val s = state.settings
+    SectionHeader(stringResource(R.string.settings_section_flashlight))
+    LampCard(Modifier.fillMaxWidth()) {
+        ChoiceRow(
+            title = stringResource(R.string.settings_default_source),
+            options = listOf(
+                DefaultLightSource.LED to stringResource(R.string.source_led),
+                DefaultLightSource.SCREEN to stringResource(R.string.source_screen),
+            ),
+            selected = s.defaultLightSource,
+            onSelect = actions.setDefaultSource,
+        )
+        RowDivider()
+        ChoiceRow(
+            title = stringResource(R.string.settings_start_behavior),
+            options = listOf(
+                StartBehavior.OFF to stringResource(R.string.start_off),
+                StartBehavior.TORCH_ON to stringResource(R.string.start_torch),
+                StartBehavior.SCREEN_LIGHT to stringResource(R.string.start_screen),
+            ),
+            selected = s.startBehavior,
+            onSelect = actions.setStartBehavior,
+        )
+        RowDivider()
+        StrobeSliderRow(s.strobeHz, actions.setStrobeHz)
+        RowDivider()
+        SwitchRow(
+            stringResource(R.string.settings_shake),
+            if (shakeAvailable) stringResource(R.string.settings_shake_desc) else stringResource(R.string.settings_shake_unavailable),
+            checked = s.shakeEnabled && shakeAvailable,
+            onChange = actions.setShakeEnabled,
+            enabled = shakeAvailable,
+        )
+        if (s.shakeEnabled && shakeAvailable) {
+            ChoiceRow(
+                title = stringResource(R.string.settings_shake_sensitivity),
+                options = listOf(
+                    ShakeSensitivity.LOW to stringResource(R.string.sensitivity_low),
+                    ShakeSensitivity.MEDIUM to stringResource(R.string.sensitivity_medium),
+                    ShakeSensitivity.HIGH to stringResource(R.string.sensitivity_high),
+                ),
+                selected = s.shakeSensitivity,
+                onSelect = actions.setShakeSensitivity,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoSection(state: MainUiState, actions: SettingsActions) {
+    SectionHeader(stringResource(R.string.settings_section_info))
+    LampCard(Modifier.fillMaxWidth()) {
+        InfoRow(stringResource(R.string.settings_version), "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        RowDivider()
+        InfoRow(stringResource(R.string.settings_developer), "Flondy")
+        RowDivider()
+        if (state.ads.privacyOptionsRequired) {
+            NavRow(stringResource(R.string.settings_privacy_options), stringResource(R.string.settings_privacy_options_desc), actions.openPrivacyOptions)
+            RowDivider()
+        }
+        actions.openPrivacyPolicy?.let {
+            NavRow(stringResource(R.string.settings_privacy_policy), null, it)
+            RowDivider()
+        }
+        NavRow(stringResource(R.string.settings_support), BuildConfig.SUPPORT_EMAIL, actions.contactSupport)
+        RowDivider()
+        NavRow(stringResource(R.string.settings_play_store), stringResource(R.string.settings_play_store_desc), actions.openPlayStore)
+    }
+}
+
+@Composable
+private fun SafetyNotice() {
+    Text(
+        stringResource(R.string.settings_safety_notice),
+        style = MaterialTheme.typography.bodySmall,
+        color = LampColors.TextFaint,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp),
+    )
+}
+
+@Composable
+private fun DebugSection(state: MainUiState, actions: SettingsActions) {
+    SectionHeader(stringResource(R.string.debug_section))
+    DebugCard(state, actions)
 }
 
 @Composable
 private fun PremiumStatusCard(state: MainUiState, actions: SettingsActions) {
     val s = state.settings
     LampCard(
-        Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+        Modifier.fillMaxWidth(),
         borderColor = if (state.isPremium) LampColors.Gold.copy(alpha = 0.45f) else LampColors.Outline,
     ) {
         Row(
@@ -404,7 +452,7 @@ private fun StrobeSliderRow(hz: Float, onCommit: (Float) -> Unit) {
 
 @Composable
 private fun DebugCard(state: MainUiState, actions: SettingsActions) {
-    LampCard(Modifier.widthIn(max = 640.dp).fillMaxWidth(), borderColor = LampColors.Strobe.copy(alpha = 0.4f)) {
+    LampCard(Modifier.fillMaxWidth(), borderColor = LampColors.Strobe.copy(alpha = 0.4f)) {
         ChoiceRow(
             title = stringResource(R.string.debug_simulation),
             options = listOf(
@@ -440,7 +488,6 @@ private fun SectionHeader(text: String) {
         style = MaterialTheme.typography.labelSmall,
         color = LampColors.Gold.copy(alpha = 0.85f),
         modifier = Modifier
-            .widthIn(max = 640.dp)
             .fillMaxWidth()
             .padding(start = 8.dp, top = 24.dp, bottom = 10.dp)
             .semantics { heading() },

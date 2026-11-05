@@ -49,6 +49,26 @@ Jetpack DataStore (Preferences). Ein Lese-Fehler (`IOException`) führt zu Stand
 - Vollbild: `WindowInsetsControllerCompat.hide(systemBars())` mit `BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`. Das wird in `onWindowFocusChanged` erneut angewendet, z. B. nach dem Kaufdialog.
 - Dialoge werden im Compose-Baum gezeichnet (kein eigenes Fenster) und bleiben dadurch auch im Vollbild bedienbar.
 
+## Tablets, Querformat und Fenstermodi
+
+| Layout | Bedingung | Aufbau |
+|---|---|---|
+| Handy hoch | kürzere Seite < 600 dp, hoch | eine Spalte, Kacheln unten |
+| Handy quer | kürzere Seite < 600 dp, quer | zwei Spalten, kompakte Kacheln, Strobe ohne Balkenanzeige |
+| Tablet hoch | kürzere Seite ≥ 600 dp, hoch | eine Spalte, Button bis 320 dp, große Kacheln |
+| Tablet quer | kürzere Seite ≥ 600 dp (oder ≥ 840 × 480 dp), quer | zwei Spalten, großer Button links, Modi rechts |
+
+- Entschieden wird nach der tatsächlich verfügbaren Fläche (`BoxWithConstraints` in `HomeScreen`), nicht nach Gerätetyp.
+- Einstellungen: ab 840 dp Breite zwei Spalten. Premium-Seite: ab 720 dp Breite zweispaltig.
+- Hintergründe: `drawable-nodpi` (hoch, 1080 px) und `drawable-land-nodpi` (quer, bis 1920 × 1200 px). Android wählt automatisch.
+- Rotation: `configChanges` im Manifest, Compose ordnet neu an, ohne dass die Activity neu startet.
+- **Geteilter Bildschirm:** `resizeableActivity="false"` verhindert Splitscreen und Freiform-Fenster auf Handys.
+  Auf Tablets (ab 600 dp) ignoriert Android 16 diese Angabe für targetSdk 36. Das offizielle Opt-out
+  `android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` ist gesetzt, **entfällt aber ab targetSdk 37**.
+  Außerdem lässt Android ab Version 12 auf Tablets Splitscreen grundsätzlich zu und zeigt die App dann mit Rändern.
+  Ganz verhindern lässt sich das also nicht. Die App öffnet aber immer im Vollbild, und das Layout passt sich an,
+  falls der Nutzer sie trotzdem teilt.
+
 ## Animationen
 
 - `LocalMotion` deaktiviert alle Animationen, wenn der Nutzer sie ausschaltet oder Android „Animationen entfernen“ aktiv ist.

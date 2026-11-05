@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -136,7 +138,7 @@ fun LampDialog(
                 .background(Color(0xB3000000))
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -149,6 +151,7 @@ fun LampDialog(
                     .fillMaxWidth()
                     .glass(RoundedCornerShape(28.dp), color = LampColors.NightRaised, borderColor = accent.copy(alpha = 0.35f))
                     .clickable(remember { MutableInteractionSource() }, indication = null) { }
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

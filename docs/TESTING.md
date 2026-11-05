@@ -18,6 +18,18 @@ Abgedeckt durch Unit-Tests:
 - Kauflogik: kein Kauf, gekauft, nicht bestätigt (→ acknowledge), ausstehend, falsche Signatur, fremdes Produkt, Rückerstattung
 - Debug-Simulation wirkt nur in Debug-Builds
 
+### Tablet & Querformat (05.11.2026)
+
+Gerendert und visuell geprüft (Robolectric): Handy quer (891 × 411 dp), Tablet quer (1280 × 800 dp) und Tablet hoch
+(800 × 1280 dp). Geprüft wurden Start (aus/an/SOS/Strobe), Einstellungen, Paywall, Bildschirmlicht, Warn-Dialog und Freischaltung.
+Build, Unit-Tests und Lint wurden danach erneut mit AGP 9.4.1 ausgeführt – alles grün.
+
+Auf echten Geräten noch prüfen:
+- [ ] Tablet quer und hoch, Drehen während Licht/SOS/Strobe läuft (Licht muss anbleiben)
+- [ ] Handy quer mit aktivem Stroboskop: alle Kacheln sichtbar
+- [ ] Splitscreen-Versuch auf dem Handy (sollte nicht angeboten werden) und auf dem Tablet
+- [ ] Werbebanner im Querformat (neue Breite nach dem Drehen)
+
 ## Manuell auf echtem Gerät (noch durchzuführen)
 
 Diese Punkte brauchen Hardware, Google Play oder einen Tester-Account und wurden **nicht** automatisiert geprüft:

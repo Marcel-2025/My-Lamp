@@ -27,9 +27,21 @@
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode"
             android:exported="true"
             android:launchMode="singleTop"
+            android:resizeableActivity="false"
             android:theme="@style/Theme.MyLamp">
+            <!--
+                Kein geteilter Bildschirm / kein Freiform-Fenster: resizeableActivity="false".
+                Auf Tablets (ab 600 dp) ignoriert Android 16 diese Angabe für targetSdk 36 – die folgende
+                Property ist Googles offizielles, vorübergehendes Opt-out (entfällt ab targetSdk 37).
+                Drehen in Hoch- und Querformat bleibt erlaubt; configChanges sorgt für flüssige Rotation
+                ohne Neustart der Activity (Licht, Banner und Zustand bleiben erhalten).
+            -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

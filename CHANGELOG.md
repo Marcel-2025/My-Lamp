@@ -2,6 +2,18 @@
 
 ## 2.0 (versionCode 4) – Premium-Redesign
 
+### Tablet & Querformat (Ergänzung 05.11.2026)
+- Eigene Layouts für Handy hoch, Handy quer, Tablet hoch und Tablet quer (nach verfügbarer Fläche, nicht nach Gerätetyp)
+- Querformat: zwei Spalten – Power-Button links, Modi und Stroboskop rechts; Premium-Hinweis in der Kopfzeile
+- Tablets: größerer Power-Button (bis 320 dp), große Moduskacheln, mehr Randabstand
+- Einstellungen ab 840 dp Breite zweispaltig; Premium-Seite im Querformat mit Kauf links und Vorteilen rechts
+- Dialoge und Freischaltanimation scrollen bei geringer Höhe (Handy quer)
+- Eigene Querformat-Hintergrundbilder (`drawable-land-nodpi`, bis 1920 × 1200 px)
+- Flüssige Rotation ohne Neustart der Activity (`configChanges`): Licht, Banner und Zustand bleiben erhalten
+- Kein geteilter Bildschirm: `resizeableActivity="false"` plus Android-16-Opt-out
+  `PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` für Tablets
+- Inaktive Moduskacheln mit dunklerem Glasgrund (besser lesbar auf hellen Designs)
+
 ### Neu
 - Komplett neues Dark-Premium-Design (#050711 / #0C0F1C / Gold #FDEE51) mit Glas-Karten, Glow und Microinteractions
 - Animierter Power-Button (Farbwechsel, Glow, Druckeffekt, Puls nur bei aktivem Licht)
@@ -23,7 +35,7 @@
 - Beim Start gefundene, nicht bestätigte Käufe wurden nie acknowledged (automatische Erstattung nach 3 Tagen)
 - Rückerstattungen und ausstehende Käufe wurden nicht behandelt
 - Premium-Status ging bei Offline-Start verloren (Käufer sahen Werbung)
-- Release-Build nutzte eine Platzhalter-Banner-ID → produktive ID `ca-app-pub-6130152704553606/1689806050` zentral in gradle.properties
+- Release-Build nutzte eine Platzhalter-Banner-ID → jetzt zentral konfigurierbar, ohne ID keine Requests
 - Absturzrisiko durch `cameraIdList[0]` auf Geräten ohne (Rück-)Kamera
 - SOS-Morsezeiten korrigiert (Strich = 3 Einheiten, Pausen 1/3/7)
 - Strobe bis 10 ms war zu schnell für die Hardware → 1–12 Hz
