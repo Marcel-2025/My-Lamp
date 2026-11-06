@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.flondy.mylamp.BuildConfig
 import dev.flondy.mylamp.R
+import dev.flondy.mylamp.core.AppLanguage
 import dev.flondy.mylamp.ui.components.LampDialog
 import dev.flondy.mylamp.ui.components.MessageHost
 import dev.flondy.mylamp.ui.screens.CelebrationOverlay
@@ -116,6 +117,8 @@ fun LampApp(
                     Route.SETTINGS -> SettingsScreen(
                         state = state,
                         shakeAvailable = shakeAvailable,
+                        languageTag = remember(context) { AppLanguage.current(context) },
+                        onSelectLanguage = { tag -> activity?.let { AppLanguage.set(it, tag) } },
                         actions = remember(viewModel, activity) {
                             SettingsActions(
                                 onBack = { viewModel.navigateBack() },

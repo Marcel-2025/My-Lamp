@@ -153,4 +153,9 @@
     <string name="settings_play_store">My Lamp bei Google Play</string>
     <string name="settings_play_store_desc">App bewerten oder nach Updates suchen.</string>
     <string name="settings_safety_notice">Sicherheit: Die LED nicht direkt in Augen richten. Das Stroboskop kann bei fotosensitiver Epilepsie Anfälle auslösen. My Lamp ersetzt keine professionelle Notfallausrüstung.</string>
+
+    <!-- Sprache -->
+    <string name="settings_language">Sprache</string>
+    <string name="settings_language_desc">Sprache der App, unabhängig vom System.</string>
+    <string name="language_system">Systemsprache</string>
 </resources>

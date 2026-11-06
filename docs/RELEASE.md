@@ -2,7 +2,7 @@
 
 ## Checkliste vor dem Upload
 
-- [x] AdMob-App-ID `ca-app-pub-6130152704553606~5683863711` (app/build.gradle.kts) und Banner-ID `ca-app-pub-6130152704553606/1689806050` (gradle.properties) eingetragen
+- [ ] `mylamp.admobBannerId` in `local.properties` eintragen (AdMob → Apps → My Lamp → Anzeigenblöcke → Banner)
 - [ ] optional `mylamp.playLicenseKey` und `mylamp.privacyPolicyUrl` eintragen
 - [ ] versionCode prüfen: 4 muss **höher** sein als die höchste bereits hochgeladene Version, sonst erhöhen
 - [ ] Signiertes App Bundle wie gewohnt über Android Studio erstellen (Keystore unverändert)
@@ -41,6 +41,24 @@ Weitere Angaben:
 
 - **de-DE** (75): `Taschenlampe mit SOS, Stroboskop & Bildschirmlicht – schnell, hell, elegant`
 - **en-US** (69): `Flashlight with SOS, strobe & screen light – fast, bright and elegant`
+
+### Kurzbeschreibungen weiterer Sprachen (App ist in 12 Sprachen übersetzt)
+
+| Play-Sprache | Kurzbeschreibung | Zeichen |
+|---|---|---|
+| es-ES | Linterna con SOS, estroboscopio y luz de pantalla: rápida, potente y elegante | 77 |
+| fr-FR | Lampe torche avec SOS, stroboscope et lumière d'écran – rapide et élégante | 74 |
+| it-IT | Torcia con SOS, stroboscopio e luce dello schermo – veloce, potente, elegante | 77 |
+| pt-BR | Lanterna com SOS, estroboscópio e luz da tela – rápida, forte e elegante | 72 |
+| nl-NL | Zaklamp met SOS, stroboscoop en schermlicht – snel, fel en elegant | 66 |
+| pl-PL | Latarka z SOS, stroboskopem i światłem ekranu – szybka, jasna, elegancka | 72 |
+| tr-TR | SOS, flaşör ve ekran ışığı olan el feneri – hızlı, parlak ve şık | 64 |
+| ru-RU | Фонарик с SOS, стробоскопом и подсветкой экрана – быстро, ярко, стильно | 71 |
+| ja-JP | SOS・ストロボ・画面ライト搭載の懐中電灯。すばやく明るく、エレガント。 | 36 |
+| zh-CN | 带 SOS、频闪和屏幕补光的手电筒——快速、明亮、优雅 | 27 |
+
+Tipp: In der Play Console unter *Store-Präsenz → Übersetzungen verwalten* lassen sich Titel und Beschreibung
+für jede Sprache hinterlegen. Für die lange Beschreibung kann die deutsche bzw. englische Fassung als Vorlage dienen.
 
 ### Vollständige Beschreibung – de-DE
 

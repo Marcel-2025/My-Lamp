@@ -23,7 +23,7 @@ Premium-Taschenlampe für Android von **Flondy** – LED-Licht, SOS, Stroboskop 
 - **Einstellungen** (DataStore): Vollbild, Navigationsleiste, Animationen, Haptik, Design, Lichtquelle des Power-Buttons, Verhalten beim Start, Strobe-Tempo, Schütteln, Premium-Hinweise, Datenschutzoptionen, Support, Play-Store-Link
 - **Designs**: Klassisch und Mitternacht (kostenlos); Nebelwald, Waldstraße, Lichtung und Goldene Stunde (Premium)
 - **Premium** (`remove_ads`): dauerhaft werbefrei, Premium-Designs, goldene Akzente, einmalige Freischaltanimation
-- Sprachen: Deutsch und Englisch
+- Sprachen: 12 (DE, EN, ES, FR, IT, NL, PL, PT, TR, RU, JA, ZH-CN) mit Sprachauswahl in den Einstellungen
 - **Tablets und Querformat:** eigene Layouts für Handy/Tablet in Hoch- und Querformat, flüssige Rotation, kein geteilter Bildschirm
 
 ## Projektstruktur

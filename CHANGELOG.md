@@ -2,6 +2,14 @@
 
 ## 2.0 (versionCode 4) – Premium-Redesign
 
+### Mehrsprachigkeit (Ergänzung 06.11.2026)
+- 12 Sprachen: Deutsch, Englisch (Standard), Spanisch, Französisch, Italienisch, Niederländisch, Polnisch,
+  Portugiesisch, Türkisch, Russisch, Japanisch, Chinesisch (vereinfacht)
+- Sprachauswahl in den Einstellungen (Systemsprache oder feste Sprache); ab Android 13 auch in den
+  Android-Einstellungen unter Apps → My Lamp → Sprache
+- Alle Sprachen werden mit dem App Bundle ausgeliefert (kein Sprach-Split), damit die Auswahl sofort wirkt
+- Auswahl-Knöpfe in den Einstellungen erlauben zwei Zeilen für längere Übersetzungen
+
 ### Tablet & Querformat (Ergänzung 05.11.2026)
 - Eigene Layouts für Handy hoch, Handy quer, Tablet hoch und Tablet quer (nach verfügbarer Fläche, nicht nach Gerätetyp)
 - Querformat: zwei Spalten – Power-Button links, Modi und Stroboskop rechts; Premium-Hinweis in der Kopfzeile

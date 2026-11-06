@@ -83,7 +83,7 @@
     <string name="paywall_buy_with_price">Buy for %1$s</string>
     <string name="paywall_already_premium">You are Premium – thank you!</string>
     <string name="paywall_pending">Your purchase is pending. Premium will be unlocked automatically once Google Play confirms the payment.</string>
-    <string name="paywall_legal">Payment is processed securely by Google Play. Existing purchases of „Remove ads“ are recognised automatically.</string>
+    <string name="paywall_legal">Payment is processed securely by Google Play. Existing purchases of “Remove ads” are recognised automatically.</string>
 
     <!-- Celebration -->
     <string name="celebration_title">Premium unlocked</string>
@@ -115,7 +115,7 @@
     <string name="settings_nav_bar">Show navigation bar</string>
     <string name="settings_nav_bar_desc">Off: only the navigation bar is hidden.</string>
     <string name="settings_animations">Animations</string>
-    <string name="settings_animations_desc">Also respects the system setting „Remove animations“.</string>
+    <string name="settings_animations_desc">Also respects the system setting “Remove animations”.</string>
     <string name="settings_haptics">Haptic feedback</string>
     <string name="settings_haptics_desc">Gentle vibration on taps and toggles.</string>
     <string name="settings_theme">Design</string>
@@ -140,9 +140,9 @@
     <string name="premium_status_free">Free version</string>
     <string name="premium_status_free_desc">All flashlight features are free. Premium removes ads.</string>
     <string name="premium_status_pending">Purchase pending</string>
-    <string name="settings_premium_top_hint">„Premium active“ hint</string>
+    <string name="settings_premium_top_hint">“Premium active” hint</string>
     <string name="settings_premium_top_hint_desc">Small hint at the top of the main screen.</string>
-    <string name="settings_premium_bottom_hint">„Ad-free“ hint</string>
+    <string name="settings_premium_bottom_hint">“Ad-free” hint</string>
     <string name="settings_premium_bottom_hint_desc">Thank-you note where the ad used to be.</string>
     <string name="settings_restore_desc">Re-check purchases with Google Play.</string>
     <string name="settings_version">Version</string>
@@ -154,6 +154,11 @@
     <string name="settings_play_store">My Lamp on Google Play</string>
     <string name="settings_play_store_desc">Rate the app or check for updates.</string>
     <string name="settings_safety_notice">Safety: Do not shine the LED directly into eyes. The strobe can trigger seizures in people with photosensitive epilepsy. My Lamp is not a substitute for professional emergency equipment.</string>
+
+    <!-- Language -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_desc">App language, independent of the system.</string>
+    <string name="language_system">System language</string>
 
     <!-- Debug -->
     <string name="debug_section" translatable="false">Developer (debug only)</string>

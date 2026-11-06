@@ -1,6 +1,12 @@
 package dev.flondy.mylamp.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,6 +54,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import dev.flondy.mylamp.BuildConfig
 import dev.flondy.mylamp.R
 import dev.flondy.mylamp.billing.Entitlement
+import dev.flondy.mylamp.core.AppLanguage
 import dev.flondy.mylamp.core.PremiumSimulation
 import dev.flondy.mylamp.data.DefaultLightSource
 import dev.flondy.mylamp.data.LampThemeId
@@ -111,7 +119,15 @@ data class SettingsActions(
 )
 
 @Composable
-fun SettingsScreen(state: MainUiState, shakeAvailable: Boolean, actions: SettingsActions) {
+fun SettingsScreen(
+    state: MainUiState,
+    shakeAvailable: Boolean,
+    actions: SettingsActions,
+    languageTag: String = "",
+    onSelectLanguage: (String) -> Unit = {},
+) {
+    var showLanguages by remember { mutableStateOf(false) }
+    val openLanguages = { showLanguages = true }
     Box(Modifier.fillMaxSize().background(LampColors.NightGradient)) {
         BoxWithConstraints(
             Modifier
@@ -134,7 +150,7 @@ fun SettingsScreen(state: MainUiState, shakeAvailable: Boolean, actions: Setting
                         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
                             Column(Modifier.weight(1f)) {
                                 PremiumStatusCard(state, actions)
-                                GeneralSection(state, actions)
+                                GeneralSection(state, actions, languageTag, openLanguages)
                             }
                             Column(Modifier.weight(1f)) {
                                 FlashlightSection(state, shakeAvailable, actions)
@@ -155,12 +171,84 @@ fun SettingsScreen(state: MainUiState, shakeAvailable: Boolean, actions: Setting
                     val m = Modifier.widthIn(max = 640.dp).fillMaxWidth()
                     item { Box(m) { SettingsHeader(actions) } }
                     item { Box(m) { PremiumStatusCard(state, actions) } }
-                    item { Column(m) { GeneralSection(state, actions) } }
+                    item { Column(m) { GeneralSection(state, actions, languageTag, openLanguages) } }
                     item { Column(m) { FlashlightSection(state, shakeAvailable, actions) } }
                     item { Column(m) { InfoSection(state, actions) } }
                     item { Box(m) { SafetyNotice() } }
                     if (BuildConfig.DEBUG) item { Column(m) { DebugSection(state, actions) } }
                     item { Spacer(Modifier.height(24.dp)) }
+                }
+            }
+        }
+        LanguagePicker(
+            visible = showLanguages,
+            selected = languageTag,
+            onSelect = { tag ->
+                showLanguages = false
+                if (tag != languageTag) onSelectLanguage(tag)
+            },
+            onDismiss = { showLanguages = false },
+        )
+    }
+}
+
+/** Sprachauswahl als Overlay im Premium-Design (Sprachnamen in eigener Schreibweise). */
+@Composable
+private fun LanguagePicker(visible: Boolean, selected: String, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val motion = LocalMotion.current
+    if (visible) BackHandler(onBack = onDismiss)
+    AnimatedVisibility(visible = visible, enter = fadeIn(motion.spec(tween(200))), exit = fadeOut(motion.spec(tween(150)))) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xB3000000))
+                .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismiss)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier
+                    .widthIn(max = 420.dp)
+                    .fillMaxWidth()
+                    .glass(RoundedCornerShape(28.dp), color = LampColors.NightRaised, borderColor = LampColors.Gold.copy(alpha = 0.35f))
+                    .clickable(remember { MutableInteractionSource() }, indication = null) { }
+                    .padding(vertical = 12.dp),
+            ) {
+                Text(
+                    stringResource(R.string.settings_language),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = LampColors.Text,
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp).semantics { heading() },
+                )
+                Text(
+                    stringResource(R.string.settings_language_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LampColors.TextMuted,
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 2.dp, bottom = 8.dp),
+                )
+                val entries = listOf("" to stringResource(R.string.language_system)) +
+                    AppLanguage.options.map { it.tag to it.nativeName }
+                LazyColumn(Modifier.heightIn(max = 520.dp)) {
+                    items(entries, key = { it.first }) { (tag, name) ->
+                        val isSelected = tag == selected
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 52.dp)
+                                .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(tag) }
+                                .padding(horizontal = 22.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (isSelected) LampColors.Gold else LampColors.Text,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (isSelected) Icon(Icons.Filled.Check, null, tint = LampColors.Gold)
+                        }
+                    }
                 }
             }
         }
@@ -189,10 +277,16 @@ private fun SettingsHeader(actions: SettingsActions) {
 }
 
 @Composable
-private fun GeneralSection(state: MainUiState, actions: SettingsActions) {
+private fun GeneralSection(state: MainUiState, actions: SettingsActions, languageTag: String, onOpenLanguages: () -> Unit) {
     val s = state.settings
     SectionHeader(stringResource(R.string.settings_section_general))
     LampCard(Modifier.fillMaxWidth()) {
+        NavRow(
+            stringResource(R.string.settings_language),
+            AppLanguage.displayName(languageTag) ?: stringResource(R.string.language_system),
+            onOpenLanguages,
+        )
+        RowDivider()
         SwitchRow(stringResource(R.string.settings_fullscreen), stringResource(R.string.settings_fullscreen_desc), s.fullscreen, actions.setFullscreen)
         RowDivider()
         SwitchRow(
@@ -571,7 +665,7 @@ private fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selecte
                         .padding(horizontal = 6.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, style = MaterialTheme.typography.labelMedium, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(label, style = MaterialTheme.typography.labelMedium, color = fg, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
         }

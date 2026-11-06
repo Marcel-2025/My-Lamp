@@ -1,5 +1,6 @@
 package dev.flondy.mylamp
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import dev.flondy.mylamp.core.AppLanguage
 import dev.flondy.mylamp.data.AppSettings
 import dev.flondy.mylamp.sensor.ShakeDetector
 import dev.flondy.mylamp.ui.LampApp
@@ -24,6 +26,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    // Android 7–12: in der App gewählte Sprache anwenden (ab Android 13 übernimmt das System).
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     private val viewModel: MainViewModel by viewModels { MainViewModel.Factory }
     private lateinit var shakeDetector: ShakeDetector

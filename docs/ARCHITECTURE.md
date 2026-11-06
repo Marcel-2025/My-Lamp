@@ -69,6 +69,15 @@ Jetpack DataStore (Preferences). Ein Lese-Fehler (`IOException`) führt zu Stand
   Ganz verhindern lässt sich das also nicht. Die App öffnet aber immer im Vollbild, und das Layout passt sich an,
   falls der Nutzer sie trotzdem teilt.
 
+## Sprachen
+
+- Texte in `res/values*/strings.xml`; Englisch (`values/`) ist die Rückfallsprache, Debug-Texte sind nicht übersetzbar.
+- `core/AppLanguage.kt`: ab Android 13 über `LocaleManager` (systemweite App-Sprache), davor über
+  `attachBaseContext` und eine lokal gespeicherte Wahl.
+- `generateLocaleConfig = true` + `res/resources.properties` erzeugen die Sprachliste für Android automatisch.
+- `bundle.language.enableSplit = false`: Google Play liefert alle Sprachen aus.
+- Neue Sprache hinzufügen: Ordner `values-xx` mit allen Texten anlegen und in `AppLanguage.options` eintragen.
+
 ## Animationen
 
 - `LocalMotion` deaktiviert alle Animationen, wenn der Nutzer sie ausschaltet oder Android „Animationen entfernen“ aktiv ist.

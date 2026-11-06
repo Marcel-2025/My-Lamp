@@ -68,6 +68,16 @@ android {
         buildConfig = true
         compose = true
     }
+    bundle {
+        language {
+            // Alle Sprachen ins Gerät ausliefern, damit die Sprachwahl in der App sofort funktioniert
+            enableSplit = false
+        }
+    }
+    androidResources {
+        // Erzeugt locales_config.xml → App-Sprache auch in den Android-Systemeinstellungen wählbar (Android 13+)
+        generateLocaleConfig = true
+    }
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
