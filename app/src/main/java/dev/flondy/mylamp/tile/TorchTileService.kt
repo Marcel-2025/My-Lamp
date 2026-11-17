@@ -43,7 +43,7 @@ class TorchTileService : TileService() {
     override fun onClick() {
         super.onClick()
         if (!torch.hasFlash) return
-        // Laufende Muster (SOS/Strobe) werden durch Antippen beendet.
+        // Laufende Muster (SOS, Strobe, Morse, Effekte) werden durch Antippen beendet.
         if (torch.mode.value == LightMode.OFF) torch.startTorch() else torch.stop()
     }
 
@@ -68,6 +68,8 @@ class TorchTileService : TileService() {
                     LightMode.TORCH -> R.string.status_on
                     LightMode.SOS -> R.string.mode_sos
                     LightMode.STROBE -> R.string.mode_strobe
+                    LightMode.MORSE -> R.string.mode_morse
+                    LightMode.EFFECT -> R.string.mode_effects
                 }
             )
         }

@@ -35,6 +35,8 @@ import dev.flondy.mylamp.core.AppLanguage
 import dev.flondy.mylamp.ui.components.LampDialog
 import dev.flondy.mylamp.ui.components.MessageHost
 import dev.flondy.mylamp.ui.screens.CelebrationOverlay
+import dev.flondy.mylamp.ui.screens.EffectsSheet
+import dev.flondy.mylamp.ui.screens.ShopScreen
 import dev.flondy.mylamp.ui.screens.HomeActions
 import dev.flondy.mylamp.ui.screens.HomeScreen
 import dev.flondy.mylamp.ui.screens.PaywallScreen
@@ -56,6 +58,7 @@ fun LampApp(
     val route by viewModel.route.collectAsStateWithLifecycle()
     val showCelebration by viewModel.showCelebration.collectAsStateWithLifecycle()
     val showStrobeWarning by viewModel.showStrobeWarning.collectAsStateWithLifecycle()
+    val showEffects by viewModel.showEffects.collectAsStateWithLifecycle()
 
     var message by remember { mutableStateOf<UiMessage?>(null) }
     LaunchedEffect(Unit) { viewModel.messages.collect { message = it } }
@@ -111,6 +114,10 @@ fun LampApp(
                                 onStrengthDone = viewModel::onTorchStrengthCommit,
                                 onCloseTopHint = { viewModel.setShowPremiumTopHint(false) },
                                 onCloseBottomHint = { viewModel.setShowPremiumBottomHint(false) },
+                                onEffects = viewModel::openEffects,
+                                onShop = { viewModel.navigate(Route.SHOP) },
+                                onAutoOff = viewModel::cycleAutoOff,
+                                onEndPreview = { viewModel.endPreview(silent = true) },
                             )
                         },
                     )
@@ -136,6 +143,9 @@ fun LampApp(
                                 setShakeEnabled = viewModel::setShakeEnabled,
                                 setShakeSensitivity = viewModel::setShakeSensitivity,
                                 openPaywall = { viewModel.navigate(Route.PAYWALL) },
+                                openShop = { viewModel.navigate(Route.SHOP) },
+                                setVolumeKeys = viewModel::setVolumeKeysToggle,
+                                setAutoOff = viewModel::setAutoOffMinutes,
                                 restorePurchases = viewModel::restorePurchases,
                                 setTopHint = viewModel::setShowPremiumTopHint,
                                 setBottomHint = viewModel::setShowPremiumBottomHint,
@@ -164,6 +174,12 @@ fun LampApp(
                             )
                         },
                     )
+                    Route.SHOP -> ShopScreen(
+                        state = state,
+                        onItem = viewModel::onShopItem,
+                        onUnlockAll = { viewModel.navigate(Route.PAYWALL) },
+                        onBack = { viewModel.navigateBack() },
+                    )
                     Route.PAYWALL -> PaywallScreen(
                         billing = state.billing,
                         isPremium = state.isPremium,
@@ -173,11 +189,22 @@ fun LampApp(
                         onBack = { viewModel.navigateBack() },
                     )
                     Route.SCREEN_LIGHT -> ScreenLightScreen(
-                        color = state.settings.screenLightColor,
+                        color = state.screenColor,
                         brightness = state.settings.screenLightBrightness,
-                        onColorChange = viewModel::setScreenLightColor,
+                        onColorChange = viewModel::onScreenColor,
                         onBrightnessChange = viewModel::setScreenLightBrightness,
-                        onClose = { if (!viewModel.navigateBack()) onExit() },
+                        onClose = {
+                            viewModel.endPreview(silent = true)
+                            if (!viewModel.navigateBack()) onExit()
+                        },
+                        customHue = state.settings.screenCustomHue,
+                        effect = state.screenEffect,
+                        isPremium = state.isPremium,
+                        preview = state.preview,
+                        autoOff = state.autoOff,
+                        onEffectChange = viewModel::onScreenEffect,
+                        onHueChange = viewModel::setScreenCustomHue,
+                        onUnlock = { viewModel.navigate(Route.PAYWALL) },
                     )
                 }
             }
@@ -192,6 +219,15 @@ fun LampApp(
                 onDismiss = { viewModel.onStrobeWarningResult(false) },
                 icon = painterResource(R.drawable.ic_strobe),
                 accent = LampColors.Strobe,
+            )
+
+            EffectsSheet(
+                visible = showEffects && route == Route.HOME,
+                state = state,
+                onMorse = viewModel::startMorse,
+                onStop = viewModel::onPowerClick,
+                onEffect = viewModel::onEffectClick,
+                onDismiss = viewModel::closeEffects,
             )
 
             CelebrationOverlay(visible = showCelebration, onDismiss = viewModel::dismissCelebration)

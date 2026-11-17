@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
-enum class LightMode { OFF, TORCH, SOS, STROBE }
+enum class LightMode { OFF, TORCH, SOS, STROBE, MORSE, EFFECT }
 
 enum class TorchError { NO_FLASH, CAMERA_IN_USE, UNKNOWN }
 
@@ -61,6 +61,14 @@ class TorchController(
     /** Tatsächlicher Hardware-Zustand der LED (flackert bei SOS/Strobe). */
     private val _ledOn = MutableStateFlow(false)
     val ledOn: StateFlow<Boolean> = _ledOn.asStateFlow()
+
+    /** Aktiver Lichteffekt (nur bei [LightMode.EFFECT]). */
+    private val _effect = MutableStateFlow<LightEffect?>(null)
+    val effect: StateFlow<LightEffect?> = _effect.asStateFlow()
+
+    /** Aktuell gemorster Text (nur bei [LightMode.MORSE], bereits bereinigt). */
+    private val _morseText = MutableStateFlow("")
+    val morseText: StateFlow<String> = _morseText.asStateFlow()
 
     private val _strobeHz = MutableStateFlow(LightPatterns.STROBE_DEFAULT_HZ)
     val strobeHz: StateFlow<Float> = _strobeHz.asStateFlow()
@@ -150,6 +158,34 @@ class TorchController(
                 on = !on
                 if (!setLed(on)) return@launchExclusive
                 delay(LightPatterns.strobeHalfPeriodMs(_strobeHz.value))
+            }
+        }
+    }
+
+    /** Morst [text] endlos (mit Wortpause zwischen den Wiederholungen). Leerer Text wird ignoriert. */
+    fun startMorse(text: String) {
+        val clean = LightPatterns.sanitizeMorse(text)
+        val steps = LightPatterns.morse(clean)
+        if (steps.isEmpty() || !ensureFlash()) return
+        _morseText.value = clean
+        launchExclusive(LightMode.MORSE) { runLoop(steps) }
+    }
+
+    fun startEffect(effect: LightEffect) {
+        if (!ensureFlash()) return
+        _effect.value = effect
+        launchExclusive(LightMode.EFFECT) { runLoop(effect.steps) }
+    }
+
+    fun toggleEffect(effect: LightEffect) {
+        if (_mode.value == LightMode.EFFECT && _effect.value == effect) stop() else startEffect(effect)
+    }
+
+    private suspend fun CoroutineScope.runLoop(steps: List<LightStep>) {
+        while (isActive) {
+            for (step in steps) {
+                if (!setLed(step.on)) return
+                delay(step.durationMs)
             }
         }
     }

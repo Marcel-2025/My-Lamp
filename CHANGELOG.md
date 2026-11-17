@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.2 (versionCode 6) – Lichtstudio
+
+Enthält alles aus 2.1 (Tablet/Querformat, 12 Sprachen), das noch nicht im Store war.
+
+### Neu – kostenlos
+- **Morse-Nachricht:** eigener Text (A–Z, 0–9, Satzzeichen, Umlaute werden umschrieben), bis 40 Zeichen, mit Code-Vorschau; LED wiederholt ihn nach ITU-Takt
+- **Lichteffekt „Warnblinker“** (1 Hz)
+- **Auto-Aus-Timer** 1/5/15/30/60 Minuten: Chip unter dem Power-Button, Countdown-Ring um den Button, gilt auch fürs Bildschirmlicht
+- **Lautstärketasten schalten das Licht** (Einstellung, standardmäßig aus)
+- **Akku-Anzeige** in der Kopfzeile, Hinweis ab 15 % (nicht beim Laden)
+- **Startbildschirm-Widget** „Licht an/aus“ (1×1), synchron mit App und Kachel
+- Neue Moduskachel **„Effekte“** (Morse + Lichteffekte)
+
+### Neu – Premium (mit dem bestehenden Einmalkauf `remove_ads`)
+- **Studio & Shop:** alle Designs, Button-Skins, Lichteffekte und Bildschirmlicht-Inhalte mit animierter Mini-Vorschau, Sprungmarken, Leiste „Alles freischalten“
+- **Live-Vorschau** gesperrter Inhalte: Designs, Skins und Bildschirmlicht 30 s, LED-Effekte 10 s; Vorschau-Leiste mit Restzeit und „Freischalten“; nach einem Kauf wird die laufende Vorschau übernommen
+- **4 animierte Designs:** Polarlicht, Sternennacht, Glut, Ozean (gezeichnet, keine Bilddateien; Standbild bei ausgeschalteten Animationen)
+- **6 Button-Skins:** Chrom, Neon, Rosé, Smaragd, Lava, Aurora (mit drehendem Farbring); Gold bleibt kostenlos
+- **3 LED-Effekte:** Herzschlag, Leuchtfeuer, Signal – alle unter 3 Blitzen pro Sekunde
+- **Bildschirmlicht:** 4 neue Farben (Grün, Violett, Cyan, Rosa), eigene Farbe per Farbton-Regler, Effekte Regenbogen, Kerzenlicht, Party, Warnlicht
+
+### Verbessert
+- Premium-Seite nennt die Inhalte mit Anzahl direkt aus dem Katalog
+- Gesperrte Designs in den Einstellungen starten eine Vorschau statt direkt die Kaufseite
+- Power-Button mit kurzer Einblendung beim Start
+- Schnelleinstellungs-Kachel zeigt auch Morse und Effekte als Status
+- Nach einer Rückerstattung fallen Premium-Design, -Skin, -Farbe und -Effekt automatisch auf die kostenlosen Varianten zurück
+
+### Technik
+- Neue reine Logik-Klassen mit Unit-Tests: `ShopCatalog`, `PremiumPreview`/`EffectiveLook`, `AutoOff`, `ScreenLightLogic`, erweitertes `LightPatterns`, `LightEffect`
+- 54 Unit-Tests (vorher 23), Lint ohne Fehler, Debug- und Release-Build (R8) erfolgreich
+- Neue Texte in allen 12 Sprachen
+
 ## 2.0 (versionCode 4) – Premium-Redesign
 
 ### Mehrsprachigkeit (Ergänzung 06.11.2026)

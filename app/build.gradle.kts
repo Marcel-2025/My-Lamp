@@ -34,8 +34,8 @@ android {
         applicationId = "dev.flondy.mylamp"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "2.0"
+        versionCode = 6
+        versionName = "2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

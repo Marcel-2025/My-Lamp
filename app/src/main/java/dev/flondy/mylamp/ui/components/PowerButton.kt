@@ -39,8 +39,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
 import dev.flondy.mylamp.R
+import dev.flondy.mylamp.data.ButtonSkin
 import dev.flondy.mylamp.ui.theme.LampColors
+import dev.flondy.mylamp.ui.theme.SkinStyle
+import dev.flondy.mylamp.ui.theme.Skins
 import dev.flondy.mylamp.ui.theme.LocalHaptics
 import dev.flondy.mylamp.ui.theme.LocalMotion
 
@@ -49,6 +57,7 @@ import dev.flondy.mylamp.ui.theme.LocalMotion
  * - Weicher Farbwechsel, Glow und Druck-Skalierung
  * - Dezenter Puls NUR bei eingeschaltetem Licht und aktivierten Animationen
  * - Alle animierten Werte werden erst in der Draw-Phase gelesen → keine unnötigen Recompositions
+ * - [skin] bestimmt Farbe und Ring (Premium-Skins), [timerProgress] zeichnet den Auto-Aus-Countdown
  */
 @Composable
 fun PowerButton(
@@ -60,6 +69,9 @@ fun PowerButton(
     stateText: String,
     modifier: Modifier = Modifier,
     size: Dp = 200.dp,
+    skin: SkinStyle = Skins.of(ButtonSkin.GOLD),
+    /** 0..1 abgelaufener Anteil des Auto-Aus-Timers, null = kein Timer. */
+    timerProgress: Float? = null,
 ) {
     val motion = LocalMotion.current
     val haptics = LocalHaptics.current
@@ -77,8 +89,9 @@ fun PowerButton(
         label = "powerGlow",
     )
     val accentColor by animateColorAsState(accent, motion.spec(tween(500)), label = "accent")
+    val skinColor by animateColorAsState(skin.accent, motion.spec(tween(500)), label = "skinAccent")
     val discTop by animateColorAsState(
-        if (isOn) Color(0xFFFFFBD6) else Color(0xFF1B2036),
+        if (isOn) skin.discTop else Color(0xFF1B2036),
         motion.spec(tween(450)), label = "discTop",
     )
     val discBottom by animateColorAsState(
@@ -88,7 +101,7 @@ fun PowerButton(
     val iconTint by animateColorAsState(
         when {
             isOn -> LampColors.Night
-            isPremium -> LampColors.Gold.copy(alpha = 0.85f)
+            isPremium || skin.skin != ButtonSkin.GOLD -> skin.accent.copy(alpha = 0.85f)
             else -> LampColors.TextMuted
         },
         motion.spec(tween(350)), label = "iconTint",
@@ -106,8 +119,30 @@ fun PowerButton(
     }
     val pulseActive by rememberUpdatedState(isOn && motion.enabled)
 
+    // Drehender Farbring (Polarlicht-Skin)
+    val hasRing = skin.ring.isNotEmpty()
+    val ringRotation: State<Float> = if (hasRing && motion.enabled) {
+        rememberInfiniteTransition(label = "ring").animateFloat(
+            initialValue = 0f, targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(6000, easing = LinearEasing), RepeatMode.Restart),
+            label = "ringRotation",
+        )
+    } else remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+
+    // Kurze Einblendung beim ersten Anzeigen
+    val entrance = remember { Animatable(if (motion.enabled) 0f else 1f) }
+    LaunchedEffect(Unit) { entrance.animateTo(1f, tween(650, easing = FastOutSlowInEasing)) }
+    val timer by rememberUpdatedState(timerProgress)
+
     Box(
-        modifier = modifier.size(size * 1.45f),
+        modifier = modifier
+            .size(size * 1.45f)
+            .graphicsLayer {
+                alpha = entrance.value
+                val e = 0.85f + 0.15f * entrance.value
+                scaleX = e
+                scaleY = e
+            },
         contentAlignment = Alignment.Center,
     ) {
         // Glow + Puls-Ring (Draw-Phase)
@@ -135,13 +170,39 @@ fun PowerButton(
                     style = Stroke(width = 2.dp.toPx()),
                 )
             }
-            // Feiner Außenring
+            // Feiner Außenring (bei Premium-Skins auch ausgeschaltet in Skin-Farbe)
             drawCircle(
-                color = if (g > 0.5f) accentColor.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.10f),
+                color = when {
+                    g > 0.5f -> accentColor.copy(alpha = 0.7f)
+                    skin.skin != ButtonSkin.GOLD -> skinColor.copy(alpha = 0.35f)
+                    else -> Color.White.copy(alpha = 0.10f)
+                },
                 radius = baseRadius + 6.dp.toPx(),
                 center = center,
                 style = Stroke(width = 1.dp.toPx()),
             )
+            if (hasRing) {
+                rotate(ringRotation.value, center) {
+                    drawCircle(
+                        brush = Brush.sweepGradient(skin.ring, center),
+                        radius = baseRadius + 6.dp.toPx(),
+                        center = center,
+                        style = Stroke(width = 3.dp.toPx()),
+                        alpha = if (g > 0.5f) 1f else 0.6f,
+                    )
+                }
+            }
+            // Auto-Aus-Countdown: verbleibende Zeit als Bogen
+            timer?.let { progress ->
+                val r = baseRadius + 14.dp.toPx()
+                val topLeft = Offset(center.x - r, center.y - r)
+                val arcSize = Size(r * 2, r * 2)
+                drawArc(Color.White.copy(alpha = 0.10f), -90f, 360f, false, topLeft, arcSize, style = Stroke(width = 3.dp.toPx()))
+                drawArc(
+                    skinColor, -90f, 360f * (1f - progress), false, topLeft, arcSize,
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                )
+            }
         }
 
         Box(

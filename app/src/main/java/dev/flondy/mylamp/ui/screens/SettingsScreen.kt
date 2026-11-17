@@ -104,6 +104,9 @@ data class SettingsActions(
     val setShakeEnabled: (Boolean) -> Unit,
     val setShakeSensitivity: (ShakeSensitivity) -> Unit,
     val openPaywall: () -> Unit,
+    val openShop: () -> Unit = {},
+    val setVolumeKeys: (Boolean) -> Unit = {},
+    val setAutoOff: (Int) -> Unit = {},
     val restorePurchases: () -> Unit,
     val setTopHint: (Boolean) -> Unit,
     val setBottomHint: (Boolean) -> Unit,
@@ -306,6 +309,8 @@ private fun GeneralSection(state: MainUiState, actions: SettingsActions, languag
         }
         ThemePicker(selected = s.theme, isPremium = state.isPremium, onSelect = actions.selectTheme)
         Spacer(Modifier.height(10.dp))
+        RowDivider()
+        NavRow(stringResource(R.string.settings_studio), stringResource(R.string.settings_studio_desc), actions.openShop, accent = true)
     }
 }
 
@@ -334,6 +339,17 @@ private fun FlashlightSection(state: MainUiState, shakeAvailable: Boolean, actio
             selected = s.startBehavior,
             onSelect = actions.setStartBehavior,
         )
+        RowDivider()
+        ChoiceRow(
+            title = stringResource(R.string.settings_auto_off),
+            options = dev.flondy.mylamp.data.AUTO_OFF_CHOICES.map { m ->
+                m to if (m == 0) stringResource(R.string.auto_off_never) else m.toString()
+            },
+            selected = s.autoOffMinutes,
+            onSelect = actions.setAutoOff,
+        )
+        RowDivider()
+        SwitchRow(stringResource(R.string.settings_volume_keys), stringResource(R.string.settings_volume_keys_desc), s.volumeKeysToggle, actions.setVolumeKeys)
         RowDivider()
         StrobeSliderRow(s.strobeHz, actions.setStrobeHz)
         RowDivider()
@@ -485,19 +501,8 @@ private fun ThemePicker(selected: LampThemeId, isPremium: Boolean, onSelect: (La
                         .clip(RoundedCornerShape(18.dp))
                         .border(if (isSelected) 2.dp else 1.dp, border, RoundedCornerShape(18.dp)),
                 ) {
-                    val img = visual.thumb
-                    if (img != null) {
-                        Image(painterResource(img), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                    } else {
-                        Box(Modifier.fillMaxSize().background(LampColors.NightGradient))
-                    }
-                    Box(
-                        Modifier
-                            .align(Alignment.Center)
-                            .size(26.dp)
-                            .clip(CircleShape)
-                            .background(Brush.radialGradient(listOf(LampColors.Gold, LampColors.GoldWarm)))
-                    )
+                    // Gezeichnete Designs laufen nur beim ausgewählten Design mit (spart Akku in der Liste)
+                    dev.flondy.mylamp.ui.components.ThemePreview(visual, animate = isSelected && LocalMotion.current.enabled, modifier = Modifier.fillMaxSize())
                     if (locked) {
                         Box(
                             Modifier

@@ -60,6 +60,21 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.flondy.mylamp.R
 import dev.flondy.mylamp.data.ScreenLightColor
+import dev.flondy.mylamp.data.ScreenEffect
+import dev.flondy.mylamp.core.AutoOff
+import dev.flondy.mylamp.core.ScreenLightLogic
+import dev.flondy.mylamp.shop.PremiumPreview
+import dev.flondy.mylamp.ui.AutoOffTimer
+import dev.flondy.mylamp.ui.screenColorName
+import dev.flondy.mylamp.ui.screenEffectName
+import dev.flondy.mylamp.ui.components.rememberTicker
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.runtime.withFrameMillis
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextOverflow
 import dev.flondy.mylamp.ui.components.glass
 import dev.flondy.mylamp.ui.theme.LampColors
 import dev.flondy.mylamp.ui.theme.LocalHaptics
@@ -69,7 +84,9 @@ import kotlin.math.roundToInt
 
 /**
  * Bildschirmlicht:
- * - Farbe (Neutral/Warm/Kalt/Bernstein/Rot) und Helligkeit einstellbar
+ * - Farbe (5 kostenlose, 4 Premium-Farben, eigene Farbe per Farbton) und Helligkeit einstellbar
+ * - Premium-Effekte: Regenbogen, Kerzenlicht, Party, Warnlicht (alle langsam, siehe [ScreenLightLogic])
+ * - Gesperrte Inhalte starten eine 30-Sekunden-Vorschau
  * - Sanfte Übergänge, Display bleibt an
  * - Ursprüngliche Fensterhelligkeit wird beim Verlassen zuverlässig wiederhergestellt
  */
@@ -80,6 +97,14 @@ fun ScreenLightScreen(
     onColorChange: (ScreenLightColor) -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onClose: () -> Unit,
+    customHue: Float = 200f,
+    effect: ScreenEffect = ScreenEffect.NONE,
+    isPremium: Boolean = false,
+    preview: PremiumPreview? = null,
+    autoOff: AutoOffTimer? = null,
+    onEffectChange: (ScreenEffect) -> Unit = {},
+    onHueChange: (Float) -> Unit = {},
+    onUnlock: () -> Unit = {},
 ) {
     val view = LocalView.current
     val motion = LocalMotion.current
@@ -88,7 +113,19 @@ fun ScreenLightScreen(
     var controlsVisible by remember { mutableStateOf(true) }
     var interactionTick by remember { mutableIntStateOf(0) }
 
-    val bg by animateColorAsState(Color(color.argb), motion.spec(tween(600)), label = "screenColor")
+    var localHue by remember(customHue) { mutableFloatStateOf(customHue) }
+    val base = ScreenLightLogic.baseColor(color, localHue)
+    val staticBg by animateColorAsState(Color(base), motion.spec(tween(600)), label = "screenColor")
+    // Effekte laufen bildgenau über die Frame-Uhr; ohne Effekt bleibt die Farbe ruhig.
+    var effectTime by remember { mutableIntStateOf(0) }
+    LaunchedEffect(effect) {
+        if (effect == ScreenEffect.NONE) return@LaunchedEffect
+        val start = withFrameMillis { it }
+        while (true) withFrameMillis { effectTime = (it - start).toInt() }
+    }
+    val bg = if (effect == ScreenEffect.NONE) staticBg else Color(ScreenLightLogic.colorAt(effect, base, effectTime.toLong()))
+    val ticking = preview != null || autoOff != null
+    val now by rememberTicker(active = ticking && controlsVisible, periodMs = 500L)
     val animatedBrightness by animateFloatAsState(localBrightness, motion.spec(tween(400)), label = "brightness")
 
     // Helligkeit anwenden + Bildschirm anlassen; beim Verlassen Originalwert wiederherstellen.
@@ -169,15 +206,43 @@ fun ScreenLightScreen(
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ScreenLightColor.entries.forEach { c ->
+                if (preview != null && !isPremium) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(LampColors.GoldSubtle)
+                            .clickable(onClick = onUnlock)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val seconds = ((preview.remainingMs(now) + 999) / 1000).toInt()
+                        Text(
+                            stringResource(R.string.preview_banner, stringResource(shopItemName(preview.item)), seconds),
+                            style = MaterialTheme.typography.labelMedium, color = LampColors.Text, modifier = Modifier.weight(1f),
+                            maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(stringResource(R.string.action_unlock), style = MaterialTheme.typography.labelLarge, color = LampColors.Gold)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp),
+                ) {
+                    items(ScreenLightColor.entries.toList(), key = { it.name }) { c ->
                         val selected = c == color
-                        val name = stringResource(colorName(c))
+                        val locked = c.isPremium && !isPremium
+                        val name = stringResource(screenColorName(c))
                         Box(
                             Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(Color(c.argb))
+                                .then(
+                                    if (c == ScreenLightColor.CUSTOM) Modifier.background(
+                                        Brush.sweepGradient((0..6).map { Color(ScreenLightLogic.hsvToArgb(it * 60f, 0.7f, 1f)) })
+                                    ) else Modifier.background(Color(c.argb))
+                                )
                                 .border(if (selected) 3.dp else 1.dp, if (selected) LampColors.Gold else LampColors.OutlineStrong, CircleShape)
                                 .semantics {
                                     this.selected = selected
@@ -187,8 +252,65 @@ fun ScreenLightScreen(
                                     haptics.click()
                                     interactionTick++
                                     onColorChange(c)
-                                }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (locked) Icon(Icons.Filled.Lock, null, tint = Color(0xCC050711), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+                if (color == ScreenLightColor.CUSTOM) {
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.screen_light_hue), style = MaterialTheme.typography.labelMedium, color = LampColors.TextMuted)
+                        Spacer(Modifier.size(12.dp))
+                        Slider(
+                            value = localHue,
+                            onValueChange = {
+                                localHue = it
+                                interactionTick++
+                            },
+                            onValueChangeFinished = { onHueChange(localHue) },
+                            valueRange = 0f..360f,
+                            modifier = Modifier.weight(1f),
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color(base),
+                                activeTrackColor = Color(base),
+                                inactiveTrackColor = Color.White.copy(alpha = 0.15f),
+                            ),
                         )
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                Text(stringResource(R.string.screen_light_effects), style = MaterialTheme.typography.labelMedium, color = LampColors.TextMuted)
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(ScreenEffect.entries.toList(), key = { it.name }) { e ->
+                        val selected = e == effect
+                        val locked = e.isPremium && !isPremium
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(if (selected) LampColors.Gold else Color.White.copy(alpha = 0.08f))
+                                .semantics { this.selected = selected }
+                                .clickable(role = Role.RadioButton) {
+                                    haptics.click()
+                                    interactionTick++
+                                    onEffectChange(e)
+                                }
+                                .padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (locked) {
+                                Icon(Icons.Filled.Lock, stringResource(R.string.cd_locked), tint = if (selected) LampColors.Night else LampColors.Gold, modifier = Modifier.size(13.dp))
+                                Spacer(Modifier.size(5.dp))
+                            }
+                            Text(
+                                stringResource(screenEffectName(e)),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (selected) LampColors.Night else LampColors.Text,
+                            )
+                        }
                     }
                 }
                 Spacer(Modifier.height(16.dp))
@@ -218,15 +340,15 @@ fun ScreenLightScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = LampColors.TextFaint,
                 )
+                if (autoOff != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.auto_off_running, AutoOff.format((autoOff.endsAtMs - now).coerceAtLeast(0L))),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = LampColors.Gold,
+                    )
+                }
             }
         }
     }
-}
-
-private fun colorName(c: ScreenLightColor): Int = when (c) {
-    ScreenLightColor.NEUTRAL -> R.string.color_neutral
-    ScreenLightColor.WARM -> R.string.color_warm
-    ScreenLightColor.COOL -> R.string.color_cool
-    ScreenLightColor.AMBER -> R.string.color_amber
-    ScreenLightColor.RED -> R.string.color_red
 }

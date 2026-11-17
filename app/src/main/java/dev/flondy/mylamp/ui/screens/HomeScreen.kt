@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,8 +63,18 @@ import androidx.compose.foundation.verticalScroll
 import dev.flondy.mylamp.ui.components.TileSize
 import dev.flondy.mylamp.R
 import dev.flondy.mylamp.ads.AdaptiveAdBanner
-import dev.flondy.mylamp.data.LampThemeId
+import dev.flondy.mylamp.core.AutoOff
 import dev.flondy.mylamp.torch.LightMode
+import dev.flondy.mylamp.ui.effectName
+import dev.flondy.mylamp.ui.components.rememberBattery
+import dev.flondy.mylamp.ui.components.rememberTicker
+import dev.flondy.mylamp.ui.theme.ProceduralBackground
+import dev.flondy.mylamp.ui.theme.SkinStyle
+import dev.flondy.mylamp.ui.theme.Skins
+import dev.flondy.mylamp.shop.ShopItem
+import dev.flondy.mylamp.data.LampThemeId
+import dev.flondy.mylamp.data.ButtonSkin
+import androidx.compose.ui.text.style.TextOverflow
 import dev.flondy.mylamp.ui.MainUiState
 import dev.flondy.mylamp.ui.components.GlassIconButton
 import dev.flondy.mylamp.ui.components.ModeTile
@@ -91,24 +102,28 @@ data class HomeActions(
     val onStrengthDone: () -> Unit,
     val onCloseTopHint: () -> Unit,
     val onCloseBottomHint: () -> Unit,
+    val onEffects: () -> Unit = {},
+    val onShop: () -> Unit = {},
+    val onAutoOff: () -> Unit = {},
+    val onEndPreview: () -> Unit = {},
 )
 
-fun accentFor(mode: LightMode): Color = when (mode) {
+fun accentFor(mode: LightMode, skin: SkinStyle = Skins.of(ButtonSkin.GOLD)): Color = when (mode) {
     LightMode.SOS -> LampColors.Sos
     LightMode.STROBE -> LampColors.Strobe
-    else -> LampColors.Gold
+    else -> skin.accent
 }
 
 @Composable
 fun HomeScreen(state: MainUiState, adUnitId: String, actions: HomeActions) {
-    // Premium-Design nur mit Premium (z. B. nach Rückerstattung zurück auf „Klassisch“)
-    val themeId = state.settings.theme.takeIf { !it.isPremium || state.isPremium } ?: LampThemeId.CLASSIC
-    val visual = LampThemes.of(themeId)
+    // Angezeigtes Design: eigene Auswahl, Vorschau oder Rückfall auf „Klassisch“ (z. B. nach Rückerstattung)
+    val visual = LampThemes.of(state.theme)
+    val skin = Skins.of(state.skin)
     Column(Modifier.fillMaxSize().background(LampColors.Night)) {
         val hasBottomArea = (state.showAds && state.ads.canRequestAds) ||
             (state.isPremium && state.settings.showPremiumBottomHint)
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            ThemedBackground(visual, state.isLightOn, accentFor(state.mode))
+            ThemedBackground(visual, state.isLightOn, accentFor(state.mode, skin))
             HomeContent(state, actions, padBottom = !hasBottomArea)
         }
         if (hasBottomArea) BottomArea(state, adUnitId, actions)
@@ -125,7 +140,9 @@ private fun ThemedBackground(visual: LampVisual, isOn: Boolean, accent: Color) {
     val glow by animateFloatAsState(if (isOn) 1f else 0f, motion.spec(tween(900)), label = "bgGlow")
 
     Box(Modifier.fillMaxSize()) {
-        if (visual.offImage != null) {
+        if (visual.procedural != null) {
+            ProceduralBackground(visual.procedural, Modifier.fillMaxSize(), animate = motion.enabled)
+        } else if (visual.offImage != null) {
             val image = if (isOn && visual.onImage != null) visual.onImage else visual.offImage
             Crossfade(targetState = image, animationSpec = motion.spec(tween(900)), label = "bgImage") { res ->
                 Image(
@@ -207,6 +224,7 @@ private fun HomeContent(state: MainUiState, actions: HomeActions, padBottom: Boo
             val landscape = layout == HomeLayout.PHONE_LANDSCAPE || layout == HomeLayout.TABLET_LANDSCAPE
             // Im Querformat sitzt der Premium-Hinweis in der Kopfzeile und kostet so keine Höhe.
             TopBar(state, actions, inlineHint = landscape)
+            PreviewBanner(state, actions, Modifier.padding(top = 8.dp).widthIn(max = 560.dp).fillMaxWidth())
             if (!landscape) {
                 PremiumHint(
                     visible = state.isPremium && state.settings.showPremiumTopHint,
@@ -278,13 +296,18 @@ private fun HomeContent(state: MainUiState, actions: HomeActions, padBottom: Boo
 @Composable
 private fun PowerSection(state: MainUiState, actions: HomeActions, buttonSize: Dp, strengthWidth: Dp) {
     val motion = LocalMotion.current
-    val accent = accentFor(state.mode)
+    val skin = Skins.of(state.skin)
+    val accent = accentFor(state.mode, skin)
+    val timer = state.autoOff
+    val now by rememberTicker(active = timer != null)
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         val statusText = when (state.mode) {
             LightMode.OFF -> stringResource(R.string.status_off)
             LightMode.TORCH -> stringResource(R.string.status_on)
             LightMode.SOS -> stringResource(R.string.status_sos)
             LightMode.STROBE -> stringResource(R.string.status_strobe, state.strobeHz.roundToInt())
+            LightMode.MORSE -> stringResource(R.string.status_morse, state.morseText)
+            LightMode.EFFECT -> state.effect?.let { stringResource(effectName(it)) } ?: stringResource(R.string.mode_effects)
         }
         PowerButton(
             isOn = state.isLightOn,
@@ -294,6 +317,8 @@ private fun PowerSection(state: MainUiState, actions: HomeActions, buttonSize: D
             contentDescription = stringResource(R.string.cd_power),
             stateText = statusText,
             size = buttonSize,
+            skin = skin,
+            timerProgress = timer?.let { AutoOff.progress(it.endsAtMs - now, it.totalMs) },
         )
         AnimatedContent(
             targetState = statusText,
@@ -304,6 +329,27 @@ private fun PowerSection(state: MainUiState, actions: HomeActions, buttonSize: D
                 text = text.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (state.isLightOn) accent else LampColors.TextMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = strengthWidth),
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        AutoOffChip(
+            minutes = state.settings.autoOffMinutes,
+            remaining = timer?.let { (it.endsAtMs - now).coerceAtLeast(0L) },
+            accent = skin.accent,
+            onClick = actions.onAutoOff,
+        )
+        val battery by rememberBattery()
+        if (battery?.isLow == true) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.battery_low),
+                style = MaterialTheme.typography.bodySmall,
+                color = LampColors.Sos,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = strengthWidth),
             )
         }
         if (!state.hasFlash) {
@@ -371,6 +417,15 @@ private fun ModeTilesRow(state: MainUiState, actions: HomeActions, size: TileSiz
             size = size,
         )
         ModeTile(
+            label = stringResource(R.string.mode_effects),
+            painter = painterResource(R.drawable.ic_effects),
+            active = state.mode == LightMode.EFFECT || state.mode == LightMode.MORSE,
+            accent = Skins.of(state.skin).accent,
+            onClick = actions.onEffects,
+            modifier = Modifier.weight(1f),
+            size = size,
+        )
+        ModeTile(
             label = stringResource(R.string.mode_screen),
             painter = painterResource(R.drawable.ic_phone_android),
             active = false,
@@ -397,11 +452,17 @@ private fun TopBar(state: MainUiState, actions: HomeActions, inlineHint: Boolean
                 color = LampColors.Text,
                 modifier = Modifier.semantics { heading() },
             )
-            Text(
-                if (state.isPremium) stringResource(R.string.badge_premium) else stringResource(R.string.tagline),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (state.isPremium) LampColors.Gold else LampColors.TextFaint,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (state.isPremium) stringResource(R.string.badge_premium) else stringResource(R.string.tagline),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (state.isPremium) LampColors.Gold else LampColors.TextFaint,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                BatteryLabel()
+            }
         }
         if (inlineHint) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -439,6 +500,14 @@ private fun TopBarActions(state: MainUiState, actions: HomeActions) {
             }
             Spacer(Modifier.size(10.dp))
         }
+        GlassIconButton(
+            painter = painterResource(R.drawable.ic_shop),
+            contentDescription = stringResource(R.string.cd_shop),
+            onClick = actions.onShop,
+            tint = LampColors.Gold,
+            highlighted = !state.isPremium,
+        )
+        Spacer(Modifier.size(10.dp))
         GlassIconButton(
             painter = rememberVectorPainter(Icons.Filled.Settings),
             contentDescription = stringResource(R.string.cd_settings),
@@ -480,4 +549,112 @@ private fun BottomArea(state: MainUiState, adUnitId: String, actions: HomeAction
         }
         else -> Unit
     }
+}
+
+
+@Composable
+private fun BatteryLabel() {
+    val battery by rememberBattery()
+    val b = battery ?: return
+    Spacer(Modifier.size(8.dp))
+    Icon(
+        painterResource(R.drawable.ic_battery), null,
+        tint = if (b.isLow) LampColors.Sos else LampColors.TextFaint,
+        modifier = Modifier.size(14.dp),
+    )
+    Spacer(Modifier.size(3.dp))
+    Text(
+        stringResource(R.string.battery_level, b.percent),
+        style = MaterialTheme.typography.bodySmall,
+        color = if (b.isLow) LampColors.Sos else LampColors.TextFaint,
+        maxLines = 1,
+    )
+}
+
+/** Auto-Aus: Antippen wechselt die Dauer; läuft der Timer, zeigt der Chip die Restzeit. */
+@Composable
+private fun AutoOffChip(minutes: Int, remaining: Long?, accent: Color, onClick: () -> Unit) {
+    val haptics = dev.flondy.mylamp.ui.theme.LocalHaptics.current
+    val label = when {
+        remaining != null -> stringResource(R.string.auto_off_running, AutoOff.format(remaining))
+        minutes > 0 -> stringResource(R.string.auto_off_label, minutes)
+        else -> stringResource(R.string.auto_off_label_off)
+    }
+    val active = minutes > 0
+    Row(
+        Modifier
+            .glass(RoundedCornerShape(50), borderColor = if (active) accent.copy(alpha = 0.5f) else LampColors.Outline)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = stringResource(R.string.cd_auto_off)) {
+                haptics.click()
+                onClick()
+            }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painterResource(R.drawable.ic_timer), null, tint = if (active) accent else LampColors.TextMuted, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.size(6.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = if (active) LampColors.Text else LampColors.TextMuted)
+    }
+}
+
+/** Vorschau-Leiste: welcher Premium-Inhalt gerade getestet wird, Restzeit, Freischalten. */
+@Composable
+private fun PreviewBanner(state: MainUiState, actions: HomeActions, modifier: Modifier) {
+    val motion = LocalMotion.current
+    val preview = state.preview
+    val now by rememberTicker(active = preview != null, periodMs = 250L)
+    AnimatedVisibility(
+        visible = preview != null && !state.isPremium,
+        enter = fadeIn(motion.spec(tween(300))) + expandVertically(motion.spec(tween(300))),
+        exit = fadeOut(motion.spec(tween(200))) + shrinkVertically(motion.spec(tween(200))),
+        modifier = modifier,
+    ) {
+        val p = preview ?: return@AnimatedVisibility
+        val name = stringResource(shopItemName(p.item))
+        val seconds = ((p.remainingMs(now) + 999) / 1000).toInt()
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .glass(RoundedCornerShape(20.dp), color = Color(0xF0121626), borderColor = LampColors.Gold.copy(alpha = 0.5f))
+                .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(painterResource(R.drawable.ic_crown), null, tint = LampColors.Gold, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.size(10.dp))
+            Text(
+                stringResource(R.string.preview_banner, name, seconds),
+                style = MaterialTheme.typography.labelMedium,
+                color = LampColors.Text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(R.string.action_unlock),
+                style = MaterialTheme.typography.labelLarge,
+                color = LampColors.Night,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(LampColors.Gold)
+                    .clickable(onClick = actions.onPremium)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            )
+            GlassIconButton(
+                painter = rememberVectorPainter(Icons.Filled.Close),
+                contentDescription = stringResource(R.string.action_close),
+                onClick = actions.onEndPreview,
+                size = 38.dp,
+                modifier = Modifier.padding(start = 6.dp),
+            )
+        }
+    }
+}
+
+/** Name eines Shop-Inhalts für Vorschau-Leiste und Meldungen. */
+fun shopItemName(item: ShopItem): Int = when (item) {
+    is ShopItem.Theme -> LampThemes.of(item.id).nameRes
+    is ShopItem.Skin -> Skins.of(item.skin).nameRes
+    is ShopItem.Effect -> effectName(item.effect)
+    is ShopItem.ScreenColor -> dev.flondy.mylamp.ui.screenColorName(item.color)
+    is ShopItem.ScreenFx -> dev.flondy.mylamp.ui.screenEffectName(item.effect)
 }

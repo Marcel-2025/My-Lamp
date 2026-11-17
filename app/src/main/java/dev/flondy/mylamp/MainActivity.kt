@@ -3,6 +3,7 @@ package dev.flondy.mylamp
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -104,6 +105,24 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         viewModel.onAppBackgrounded()
         super.onStop()
+    }
+
+    /** Lautstärketasten schalten das Licht – nur wenn in den Einstellungen aktiviert. */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (viewModel.uiState.value.settings.volumeKeysToggle) {
+                if (event.repeatCount == 0) viewModel.onVolumeKey()
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if ((keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) &&
+            viewModel.uiState.value.settings.volumeKeysToggle
+        ) return true
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

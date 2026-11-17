@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dev.flondy.mylamp.sensor.ShakeSensitivity
@@ -46,6 +47,12 @@ class SettingsRepository(context: Context) {
         val PREMIUM_BOTTOM_HINT = booleanPreferencesKey("show_premium_bottom_hint")
         val CELEBRATION_SHOWN = booleanPreferencesKey("premium_celebration_shown")
         val STROBE_WARNING = booleanPreferencesKey("strobe_warning_accepted")
+        val BUTTON_SKIN = stringPreferencesKey("button_skin")
+        val VOLUME_KEYS = booleanPreferencesKey("volume_keys_toggle")
+        val AUTO_OFF = intPreferencesKey("auto_off_minutes")
+        val MORSE_TEXT = stringPreferencesKey("morse_text")
+        val SCREEN_EFFECT = stringPreferencesKey("screen_effect")
+        val SCREEN_HUE = floatPreferencesKey("screen_custom_hue")
     }
 
     val settings: Flow<AppSettings> = store.data
@@ -80,6 +87,12 @@ class SettingsRepository(context: Context) {
             showPremiumBottomHint = this[Keys.PREMIUM_BOTTOM_HINT] ?: d.showPremiumBottomHint,
             premiumCelebrationShown = this[Keys.CELEBRATION_SHOWN] ?: d.premiumCelebrationShown,
             strobeWarningAccepted = this[Keys.STROBE_WARNING] ?: d.strobeWarningAccepted,
+            buttonSkin = enumOrDefault(this[Keys.BUTTON_SKIN], d.buttonSkin),
+            volumeKeysToggle = this[Keys.VOLUME_KEYS] ?: d.volumeKeysToggle,
+            autoOffMinutes = (this[Keys.AUTO_OFF] ?: d.autoOffMinutes).takeIf { it in AUTO_OFF_CHOICES } ?: 0,
+            morseText = this[Keys.MORSE_TEXT] ?: d.morseText,
+            screenEffect = enumOrDefault(this[Keys.SCREEN_EFFECT], d.screenEffect),
+            screenCustomHue = (this[Keys.SCREEN_HUE] ?: d.screenCustomHue).coerceIn(0f, 360f),
         )
     }
 
@@ -108,6 +121,13 @@ class SettingsRepository(context: Context) {
     suspend fun setShowPremiumBottomHint(value: Boolean) = edit { it[Keys.PREMIUM_BOTTOM_HINT] = value }
     suspend fun setPremiumCelebrationShown(value: Boolean) = edit { it[Keys.CELEBRATION_SHOWN] = value }
     suspend fun setStrobeWarningAccepted(value: Boolean) = edit { it[Keys.STROBE_WARNING] = value }
+
+    suspend fun setButtonSkin(value: ButtonSkin) = edit { it[Keys.BUTTON_SKIN] = value.name }
+    suspend fun setVolumeKeysToggle(value: Boolean) = edit { it[Keys.VOLUME_KEYS] = value }
+    suspend fun setAutoOffMinutes(value: Int) = edit { it[Keys.AUTO_OFF] = value.takeIf { v -> v in AUTO_OFF_CHOICES } ?: 0 }
+    suspend fun setMorseText(value: String) = edit { it[Keys.MORSE_TEXT] = value.take(80) }
+    suspend fun setScreenEffect(value: ScreenEffect) = edit { it[Keys.SCREEN_EFFECT] = value.name }
+    suspend fun setScreenCustomHue(value: Float) = edit { it[Keys.SCREEN_HUE] = value.coerceIn(0f, 360f) }
 
     /** Nur für Debug: alle Hinweise und Einmal-Dialoge zurücksetzen. */
     suspend fun resetHints() = edit {

@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import dev.flondy.mylamp.R
 import dev.flondy.mylamp.billing.BillingState
 import dev.flondy.mylamp.billing.Entitlement
+import dev.flondy.mylamp.shop.ShopCatalog
+import dev.flondy.mylamp.shop.ShopCategory
 import dev.flondy.mylamp.ui.components.GlassIconButton
 import dev.flondy.mylamp.ui.components.glass
 import dev.flondy.mylamp.ui.theme.LampColors
@@ -183,7 +185,19 @@ private fun PaywallBenefits() {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Benefit(stringResource(R.string.paywall_benefit_ads_title), stringResource(R.string.paywall_benefit_ads_text))
-        Benefit(stringResource(R.string.paywall_benefit_themes_title), stringResource(R.string.paywall_benefit_themes_text))
+        Benefit(
+            stringResource(R.string.paywall_benefit_themes_title, ShopCatalog.premiumCount(ShopCategory.THEMES)),
+            stringResource(R.string.paywall_benefit_themes_text),
+        )
+        Benefit(
+            stringResource(R.string.paywall_benefit_studio_title),
+            stringResource(
+                R.string.paywall_benefit_studio_text,
+                ShopCatalog.premiumCount(ShopCategory.SKINS),
+                ShopCatalog.premiumCount(ShopCategory.LIGHT_EFFECTS),
+                ShopCatalog.premiumCount(ShopCategory.SCREEN),
+            ),
+        )
         Benefit(stringResource(R.string.paywall_benefit_look_title), stringResource(R.string.paywall_benefit_look_text))
         Benefit(stringResource(R.string.paywall_benefit_support_title), stringResource(R.string.paywall_benefit_support_text))
     }

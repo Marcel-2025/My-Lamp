@@ -1,6 +1,7 @@
 package dev.flondy.mylamp.ui
 
 import android.app.Activity
+import android.os.SystemClock
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,7 +17,17 @@ import dev.flondy.mylamp.billing.Entitlement
 import dev.flondy.mylamp.core.AppContainer
 import dev.flondy.mylamp.core.DebugOverrides
 import dev.flondy.mylamp.core.PremiumSimulation
+import dev.flondy.mylamp.core.AutoOff
 import dev.flondy.mylamp.data.AppSettings
+import dev.flondy.mylamp.data.ButtonSkin
+import dev.flondy.mylamp.data.ScreenEffect
+import dev.flondy.mylamp.shop.EffectiveLook
+import dev.flondy.mylamp.shop.PremiumPreview
+import dev.flondy.mylamp.shop.ShopCatalog
+import dev.flondy.mylamp.shop.ShopItem
+import dev.flondy.mylamp.torch.LightEffect
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import dev.flondy.mylamp.data.DefaultLightSource
 import dev.flondy.mylamp.data.LampThemeId
 import dev.flondy.mylamp.data.ScreenLightColor
@@ -39,7 +50,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Route { HOME, SETTINGS, PAYWALL, SCREEN_LIGHT }
+enum class Route { HOME, SETTINGS, SHOP, PAYWALL, SCREEN_LIGHT }
+
+/** Laufender Auto-Aus-Timer (Zeiten in [SystemClock.elapsedRealtime]). */
+data class AutoOffTimer(val endsAtMs: Long, val totalMs: Long)
 
 data class UiMessage(@param:StringRes val text: Int, val isError: Boolean = false, val id: Long = System.nanoTime())
 
@@ -54,6 +68,15 @@ data class MainUiState(
     val billing: BillingState = BillingState(),
     val simulation: PremiumSimulation = PremiumSimulation.REAL,
     val ads: AdsState = AdsState(configured = false),
+    val effect: LightEffect? = null,
+    val morseText: String = "",
+    val preview: PremiumPreview? = null,
+    val autoOff: AutoOffTimer? = null,
+    /** Tatsächlich angezeigtes Design/Skin/Bildschirmlicht (eigene Auswahl oder Vorschau). */
+    val theme: LampThemeId = LampThemeId.CLASSIC,
+    val skin: ButtonSkin = ButtonSkin.GOLD,
+    val screenColor: ScreenLightColor = ScreenLightColor.NEUTRAL,
+    val screenEffect: ScreenEffect = ScreenEffect.NONE,
 ) {
     /** Premium für die Darstellung (inkl. Debug-Simulation, die nur in Debug-Builds wirkt). */
     val isPremium: Boolean get() = DebugOverrides.effectivePremium(billing.isPremium, simulation)
@@ -84,14 +107,31 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     private val settingsFlow = settingsRepo.settings
     private val loadedSettings = settingsFlow.map { it to true }
 
+    private val _preview = MutableStateFlow<PremiumPreview?>(null)
+    private val _autoOff = MutableStateFlow<AutoOffTimer?>(null)
+
+    private data class Extras(val effect: LightEffect?, val morse: String, val preview: PremiumPreview?, val autoOff: AutoOffTimer?)
+
+    private val extras = combine(torch.effect, torch.morseText, _preview, _autoOff) { e, m, p, a -> Extras(e, m, p, a) }
+
     val uiState: StateFlow<MainUiState> = combine(
         loadedSettings,
         combine(torch.mode, torch.strobeHz, localUi) { m, hz, l -> Triple(m, hz, l) },
-        billing.state,
-        DebugOverrides.simulation,
+        combine(billing.state, DebugOverrides.simulation) { b, sim -> b to sim },
         ads.state,
-    ) { (settings, loaded), (mode, hz, local), billingState, simulation, adsState ->
+        extras,
+    ) { (settings, loaded), (mode, hz, local), (billingState, simulation), adsState, x ->
+        val premium = DebugOverrides.effectivePremium(billingState.isPremium, simulation)
+        val now = SystemClock.elapsedRealtime()
         MainUiState(
+            effect = x.effect,
+            morseText = x.morse,
+            preview = x.preview,
+            autoOff = x.autoOff,
+            theme = EffectiveLook.theme(settings.theme, premium, x.preview, now),
+            skin = EffectiveLook.skin(settings.buttonSkin, premium, x.preview, now),
+            screenColor = EffectiveLook.screenColor(settings.screenLightColor, premium, x.preview, now),
+            screenEffect = EffectiveLook.screenEffect(settings.screenEffect, premium, x.preview, now),
             settings = settings,
             settingsLoaded = loaded,
             mode = mode,
@@ -118,7 +158,12 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     private val _showStrobeWarning = MutableStateFlow(false)
     val showStrobeWarning: StateFlow<Boolean> = _showStrobeWarning.asStateFlow()
 
+    private val _showEffects = MutableStateFlow(false)
+    val showEffects: StateFlow<Boolean> = _showEffects.asStateFlow()
+
     private var startBehaviorApplied = false
+    private var previewJob: Job? = null
+    private var autoOffJob: Job? = null
 
     init {
         // Gespeicherte Werte in die Hardware-Steuerung übernehmen.
@@ -139,10 +184,21 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
                 )
             }
         }
+        // Auto-Aus: startet, sobald ein Licht leuchtet (LED-Modus oder Bildschirmlicht)
+        viewModelScope.launch {
+            combine(torch.mode, route, settingsFlow.map { it.autoOffMinutes }) { mode, r, minutes ->
+                (mode != LightMode.OFF || r == Route.SCREEN_LIGHT) to minutes
+            }.distinctUntilChanged().collect { (active, minutes) ->
+                if (active && minutes > 0) startAutoOff(minutes) else cancelAutoOff()
+            }
+        }
         viewModelScope.launch {
             billing.events.collect { event ->
                 when (event) {
                     BillingEvent.PurchaseCompleted -> {
+                        // Was gerade in der Vorschau lief, wird direkt übernommen.
+                        _preview.value?.let { applyItem(it.item, fromPurchase = true) }
+                        endPreview(silent = true)
                         val s = settingsFlow.first()
                         if (!s.premiumCelebrationShown) _showCelebration.value = true
                         else _messages.tryEmit(UiMessage(R.string.billing_purchase_success))
@@ -162,6 +218,11 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
 
     fun navigate(route: Route) {
         _backStack.update { if (it.last() == route) it else it + route }
+    }
+
+    /** Zurück bis zum Startbildschirm (z. B. für eine Design-Vorschau). */
+    fun popToHome() {
+        _backStack.value = listOf(Route.HOME)
     }
 
     /** @return false, wenn bereits auf dem Startbildschirm (System soll die App schließen). */
@@ -201,6 +262,140 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onSosClick() = torch.toggleSos()
+
+    /** Lautstärketaste (falls in den Einstellungen aktiviert): Licht an/aus. */
+    fun onVolumeKey(): Boolean {
+        if (!uiState.value.settings.volumeKeysToggle) return false
+        if (route.value == Route.SCREEN_LIGHT) {
+            navigateBack()
+            return true
+        }
+        onPowerClick()
+        return true
+    }
+
+    fun openEffects() {
+        _showEffects.value = true
+    }
+
+    fun closeEffects() {
+        _showEffects.value = false
+    }
+
+    fun startMorse(text: String) {
+        val clean = dev.flondy.mylamp.torch.LightPatterns.sanitizeMorse(text)
+        if (clean.isEmpty()) {
+            _messages.tryEmit(UiMessage(R.string.morse_preview_empty, isError = true))
+            return
+        }
+        save { settingsRepo.setMorseText(text) }
+        _showEffects.value = false
+        torch.startMorse(clean)
+    }
+
+    /** Lichteffekt starten bzw. beenden. Premium-Effekte ohne Premium starten eine 10-Sekunden-Vorschau. */
+    fun onEffectClick(effect: LightEffect) {
+        val item = ShopItem.Effect(effect)
+        if (!ShopCatalog.isUnlocked(item, uiState.value.isPremium)) {
+            startPreview(item)
+            return
+        }
+        _showEffects.value = false
+        torch.toggleEffect(effect)
+    }
+
+    fun cycleAutoOff() {
+        val next = AutoOff.next(uiState.value.settings.autoOffMinutes)
+        save { settingsRepo.setAutoOffMinutes(next) }
+    }
+
+    fun setAutoOffMinutes(v: Int) = save { settingsRepo.setAutoOffMinutes(v) }
+
+    private fun startAutoOff(minutes: Int) {
+        autoOffJob?.cancel()
+        val total = AutoOff.durationMs(minutes)
+        _autoOff.value = AutoOffTimer(SystemClock.elapsedRealtime() + total, total)
+        autoOffJob = viewModelScope.launch {
+            delay(total)
+            _autoOff.value = null
+            torch.stop()
+            if (route.value == Route.SCREEN_LIGHT) navigateBack()
+            _messages.tryEmit(UiMessage(R.string.auto_off_done))
+        }
+    }
+
+    private fun cancelAutoOff() {
+        autoOffJob?.cancel()
+        autoOffJob = null
+        _autoOff.value = null
+    }
+
+    // ------------------------------------------------------------------ Studio & Shop
+
+    /**
+     * Freigeschaltete Inhalte werden übernommen, gesperrte Premium-Inhalte starten eine Vorschau:
+     * Designs und Skins 30 s auf dem Startbildschirm, Bildschirmlicht 30 s, LED-Effekte 10 s.
+     */
+    fun onShopItem(item: ShopItem) {
+        if (ShopCatalog.isUnlocked(item, uiState.value.isPremium)) applyItem(item, fromPurchase = false)
+        else startPreview(item)
+    }
+
+    fun startPreview(item: ShopItem) {
+        previewJob?.cancel()
+        endPreview(silent = true)
+        val duration = PremiumPreview.durationFor(item)
+        _preview.value = PremiumPreview(item, SystemClock.elapsedRealtime() + duration)
+        when (item) {
+            is ShopItem.Theme, is ShopItem.Skin -> popToHome()
+            is ShopItem.Effect -> {
+                _showEffects.value = false
+                if (torch.hasFlash) {
+                    popToHome()
+                    torch.startEffect(item.effect)
+                } else {
+                    _messages.tryEmit(UiMessage(R.string.error_no_flash, isError = true))
+                }
+            }
+            is ShopItem.ScreenColor, is ShopItem.ScreenFx -> {
+                if (torch.mode.value != LightMode.OFF) torch.stop()
+                navigate(Route.SCREEN_LIGHT)
+            }
+        }
+        previewJob = viewModelScope.launch {
+            delay(duration)
+            endPreview(silent = false)
+        }
+    }
+
+    fun endPreview(silent: Boolean = false) {
+        val p = _preview.value ?: return
+        previewJob?.cancel()
+        previewJob = null
+        _preview.value = null
+        val item = p.item
+        if (item is ShopItem.Effect && torch.mode.value == LightMode.EFFECT && torch.effect.value == item.effect) torch.stop()
+        if (!silent) _messages.tryEmit(UiMessage(R.string.preview_ended))
+    }
+
+    private fun applyItem(item: ShopItem, fromPurchase: Boolean) {
+        when (item) {
+            is ShopItem.Theme -> save { settingsRepo.setTheme(item.id) }
+            is ShopItem.Skin -> save { settingsRepo.setButtonSkin(item.skin) }
+            is ShopItem.ScreenColor -> save { settingsRepo.setScreenLightColor(item.color) }
+            is ShopItem.ScreenFx -> save { settingsRepo.setScreenEffect(item.effect) }
+            is ShopItem.Effect -> if (!fromPurchase) {
+                if (torch.hasFlash) {
+                    popToHome()
+                    torch.startEffect(item.effect)
+                } else {
+                    _messages.tryEmit(UiMessage(R.string.error_no_flash, isError = true))
+                }
+                return
+            }
+        }
+        if (!fromPurchase) _messages.tryEmit(UiMessage(R.string.shop_selected))
+    }
 
     fun onStrobeClick() {
         if (torch.mode.value == LightMode.STROBE) {
@@ -298,15 +493,35 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun setShakeSensitivity(v: ShakeSensitivity) = save { settingsRepo.setShakeSensitivity(v) }
     fun setScreenLightColor(v: ScreenLightColor) = save { settingsRepo.setScreenLightColor(v) }
     fun setScreenLightBrightness(v: Float) = save { settingsRepo.setScreenLightBrightness(v) }
+    fun setScreenCustomHue(v: Float) = save { settingsRepo.setScreenCustomHue(v) }
+    fun setVolumeKeysToggle(v: Boolean) = save { settingsRepo.setVolumeKeysToggle(v) }
+
+    /** Farbe oder Effekt im Bildschirmlicht: gesperrte Premium-Inhalte starten eine Vorschau. */
+    fun onScreenColor(c: ScreenLightColor) {
+        if (c.isPremium && !uiState.value.isPremium) startPreview(ShopItem.ScreenColor(c))
+        else {
+            endPreview(silent = true)
+            save { settingsRepo.setScreenLightColor(c) }
+        }
+    }
+
+    fun onScreenEffect(e: ScreenEffect) {
+        if (e.isPremium && !uiState.value.isPremium) startPreview(ShopItem.ScreenFx(e))
+        else {
+            endPreview(silent = true)
+            save { settingsRepo.setScreenEffect(e) }
+        }
+    }
     fun setShowPremiumTopHint(v: Boolean) = save { settingsRepo.setShowPremiumTopHint(v) }
     fun setShowPremiumBottomHint(v: Boolean) = save { settingsRepo.setShowPremiumBottomHint(v) }
 
-    /** Premium-Designs sind nur mit Premium wählbar – sonst öffnet sich die Premium-Seite. */
+    /** Premium-Designs sind nur mit Premium wählbar – ohne Premium startet eine 30-Sekunden-Vorschau. */
     fun selectTheme(id: LampThemeId) {
         if (id.isPremium && !uiState.value.isPremium) {
-            navigate(Route.PAYWALL)
+            startPreview(ShopItem.Theme(id))
             return
         }
+        endPreview(silent = true)
         save { settingsRepo.setTheme(id) }
     }
 
